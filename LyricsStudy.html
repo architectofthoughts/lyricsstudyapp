@@ -3,6 +3,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 가사 학습 도우미 (Gemini)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #111827; color: #E5E7EB; padding-bottom: 20px; }
@@ -31,8 +32,21 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
         <header class="text-center mb-8">
-            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI 일본어 가사 학습</h1>
-            <p class="text-lg md:text-xl text-gray-400">Gemini API로 나만의 가사 분석하기</p>
+            <div class="flex justify-between items-center mb-4">
+                <div></div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI 일본어 가사 학습</h1>
+                    <p class="text-lg md:text-xl text-gray-400">Gemini API로 나만의 가사 분석하기</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div id="google-signin-btn" class="hidden"></div>
+                    <div id="user-info" class="hidden flex items-center space-x-2">
+                        <img id="user-avatar" src="" alt="User" class="w-8 h-8 rounded-full">
+                        <span id="user-name" class="text-sm text-gray-300"></span>
+                        <button onclick="signOut()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white py-1 px-2 rounded">로그아웃</button>
+                    </div>
+                </div>
+            </div>
         </header>
         
         <div class="mb-6 border-b border-gray-700">
@@ -48,10 +62,24 @@
         <main id="tab-content">
             <div id="analyze-content" class="">
                 <div class="content-card">
-                    <h2 class="text-2xl font-bold text-white mb-2">1. Gemini API 키 입력</h2>
-                    <input type="password" id="user-api-key" class="w-full p-3 rounded-lg" placeholder="이곳에 자신의 Gemini API 키를 입력하세요.">
-                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">2. 분석할 일본어 가사 입력</h2>
-                    <textarea id="user-lyrics-input" class="w-full h-48 p-3 rounded-lg" placeholder="이곳에 일본어 가사를 붙여넣으세요..."></textarea>
+                    <div id="api-key-section">
+                        <h2 class="text-2xl font-bold text-white mb-2">1. Gemini API 키 입력</h2>
+                        <input type="password" id="user-api-key" class="w-full p-3 rounded-lg" placeholder="이곳에 자신의 Gemini API 키를 입력하세요.">
+                        <p class="text-sm text-gray-400 mt-2">
+                            또는 <button onclick="handleGoogleSignIn()" class="text-blue-400 hover:text-blue-300 underline">Google 계정으로 로그인</button>하여 API 키 입력을 건너뛸 수 있습니다.
+                        </p>
+                    </div>
+                    <div id="auth-status" class="hidden">
+                        <h2 class="text-2xl font-bold text-white mb-2">✓ 인증 완료</h2>
+                        <p class="text-green-400 text-sm">Google 계정으로 로그인되어 API 키가 자동으로 설정되었습니다.</p>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">2. 분석 모델 선택</h2>
+                    <select id="model-selection" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white">
+                        <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash (빠름, 경제적)</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (정확함, 고품질)</option>
+                    </select>
+                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">3. 분석할 일본어 가사 입력</h2>
+                    <textarea id="user-lyrics-input" class="w-fll h-48 p-3 rounded-lg" placeholder="이곳에 일본어 가사를 붙여넣으세요..."></textarea>
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2">
                         <button onclick="analyzeUserLyrics()" id="analyze-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base">분석하기</button>
                         <button onclick="saveAsHTML()" id="save-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base disabled:opacity-50">HTML로 저장하기</button>
@@ -101,6 +129,167 @@ let activeLyricsData = [];
 let activeVocabData = [];
 let activeExplanation = [];
 /* --- End Injected Data --- */
+
+        // Authentication and API key management
+        const GOOGLE_CLIENT_ID = '926600143546-4hj7lceacp4um51pru7qfkn70jgmcg08.apps.googleusercontent.com';
+        const AUTHORIZED_EMAIL = 'jaceyoung0705@gmail.com';
+        
+        // Simple encryption/decryption (Note: This is basic obfuscation, not secure encryption)
+        const ENCRYPTION_KEY = 'JapaneseLyricsStudyApp2025!@#$%';
+        
+        function simpleEncrypt(text, key) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return btoa(result);
+        }
+        
+        function simpleDecrypt(encryptedText, key) {
+            try {
+                const decodedText = atob(encryptedText);
+                let result = '';
+                for (let i = 0; i < decodedText.length; i++) {
+                    result += String.fromCharCode(decodedText.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+                }
+                return result;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        // Your encrypted API key
+        const ENCRYPTED_API_KEY = 'CygKAD0cMC46PwBdAScGMzsxSThEE3taQXdSd3Bia305GhcvCzwC';
+        
+        // Helper function to encrypt your API key (run in browser console)
+        // Example: console.log('Encrypted API Key:', encryptAPIKey('your-actual-api-key-here'));
+        function encryptAPIKey(apiKey) {
+            return simpleEncrypt(apiKey, ENCRYPTION_KEY);
+        }
+        
+        // Helper function to test decryption (run in browser console)
+        function testDecryption(encryptedKey) {
+            return simpleDecrypt(encryptedKey, ENCRYPTION_KEY);
+        }
+        
+        let currentUser = null;
+        let isAuthenticated = false;
+        
+        // Google OAuth functions
+        function initializeGoogleAuth() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleResponse,
+                    auto_select: false,
+                    cancel_on_tap_outside: false
+                });
+                
+                google.accounts.id.renderButton(
+                    document.getElementById('google-signin-btn'),
+                    {
+                        theme: 'filled_blue',
+                        size: 'medium',
+                        text: 'signin_with',
+                        width: 200,
+                        locale: 'ko'
+                    }
+                );
+                
+                // Show the sign-in button
+                document.getElementById('google-signin-btn').classList.remove('hidden');
+                logToAppConsole('Google Auth initialized successfully');
+            } else {
+                logToAppConsole('Google GSI library not loaded, retrying...', 'warn');
+                setTimeout(initializeGoogleAuth, 500);
+            }
+        }
+        
+        function handleGoogleResponse(response) {
+            try {
+                const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                logToAppConsole(`Google sign-in attempt: ${payload.email}`);
+                
+                if (payload.email === AUTHORIZED_EMAIL) {
+                    currentUser = {
+                        name: payload.name,
+                        email: payload.email,
+                        picture: payload.picture
+                    };
+                    isAuthenticated = true;
+                    updateAuthUI();
+                    logToAppConsole('Authentication successful', 'success');
+                    alert(`환영합니다, ${payload.name}님! API 키가 자동으로 설정되었습니다.`);
+                } else {
+                    logToAppConsole(`Unauthorized email: ${payload.email}`, 'warn');
+                    alert(`인증되지 않은 이메일입니다.\n승인된 계정: ${AUTHORIZED_EMAIL}`);
+                }
+            } catch (error) {
+                logToAppConsole(`Google auth error: ${error.message}`, 'error');
+                alert('Google 인증 처리 중 오류가 발생했습니다.');
+            }
+        }
+        
+        function handleGoogleSignIn() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        logToAppConsole('Google sign-in was skipped or not displayed', 'warn');
+                    }
+                });
+            } else {
+                alert('Google OAuth가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+            }
+        }
+        
+        function signOut() {
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.disableAutoSelect();
+            }
+            currentUser = null;
+            isAuthenticated = false;
+            updateAuthUI();
+            logToAppConsole('User signed out');
+            alert('로그아웃되었습니다.');
+        }
+        
+        function updateAuthUI() {
+            const googleSigninBtn = document.getElementById('google-signin-btn');
+            const userInfo = document.getElementById('user-info');
+            const apiKeySection = document.getElementById('api-key-section');
+            const authStatus = document.getElementById('auth-status');
+            
+            if (isAuthenticated && currentUser) {
+                googleSigninBtn.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                apiKeySection.classList.add('hidden');
+                authStatus.classList.remove('hidden');
+                
+                document.getElementById('user-avatar').src = currentUser.picture || '';
+                document.getElementById('user-name').textContent = currentUser.name || 'User';
+            } else {
+                googleSigninBtn.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+                apiKeySection.classList.remove('hidden');
+                authStatus.classList.add('hidden');
+            }
+        }
+        
+        function getAPIKey() {
+            if (isAuthenticated) {
+                // Return the decrypted API key for authenticated users
+                const decryptedKey = simpleDecrypt(ENCRYPTED_API_KEY, ENCRYPTION_KEY);
+                if (decryptedKey) {
+                    return decryptedKey;
+                } else {
+                    logToAppConsole('Failed to decrypt API key', 'error');
+                    return null;
+                }
+            } else {
+                // Return manually entered API key for unauthenticated users
+                return document.getElementById('user-api-key').value;
+            }
+        }
 
         function logToAppConsole(message, type = 'info') {
             const consoleContent = document.getElementById('app-console-content');
@@ -169,10 +358,14 @@ let activeExplanation = [];
         
         async function analyzeUserLyrics() {
             logToAppConsole("Attempting to analyze lyrics...");
-            const apiKey = document.getElementById('user-api-key').value;
-            if (apiKey.trim() === "") {
+            const apiKey = getAPIKey();
+            if (!apiKey || apiKey.trim() === "") {
                 logToAppConsole("API key is missing.", 'warn');
-                alert("Gemini API 키를 입력해주세요.");
+                if (isAuthenticated) {
+                    alert("API 키를 복호화하는 중 오류가 발생했습니다. 개발자에게 문의해주세요.");
+                } else {
+                    alert("Gemini API 키를 입력하거나 Google 계정으로 로그인해주세요.");
+                }
                 return;
             }
             const lyricsInput = document.getElementById('user-lyrics-input').value;
@@ -260,7 +453,8 @@ ${lyricsInput}
             };
             
             try {
-                const modelName = 'gemini-2.5-flash-preview-05-20';
+                const modelSelector = document.getElementById('model-selection');
+                const modelName = modelSelector.value;
                 logToAppConsole(`Calling Gemini API with model: ${modelName}`);
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
                 const response = await fetch(apiUrl, {
@@ -413,6 +607,13 @@ let activeExplanation = ${explanationString};
             const container = document.getElementById('lyrics-content');
             container.innerHTML = '';
             
+            // Add expand all button
+            const expandAllButton = document.createElement('button');
+            expandAllButton.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base mb-4';
+            expandAllButton.textContent = '모든 해석 열기';
+            expandAllButton.onclick = toggleAllLyricDetails;
+            container.appendChild(expandAllButton);
+            
             activeLyricsData.forEach(line => {
                 const card = document.createElement('div');
                 card.className = 'content-card text-center lyric-card relative';
@@ -444,6 +645,25 @@ let activeExplanation = ${explanationString};
             helpText.className = 'text-center text-gray-500 mt-4';
             helpText.textContent = '카드를 클릭하면 독음과 해석을 보거나 숨길 수 있습니다.';
             container.appendChild(helpText);
+        }
+        
+        function toggleAllLyricDetails() {
+            const container = document.getElementById('lyrics-content');
+            const button = container.querySelector('button');
+            const allDetails = container.querySelectorAll('.lyric-details');
+            
+            if (!allDetails.length) return;
+            
+            const firstDetailVisible = allDetails[0].style.display !== 'none';
+            const newDisplayState = firstDetailVisible ? 'none' : 'block';
+            const newButtonText = firstDetailVisible ? '모든 해석 열기' : '모든 해석 닫기';
+            
+            allDetails.forEach(detail => {
+                detail.style.display = newDisplayState;
+            });
+            
+            button.textContent = newButtonText;
+            logToAppConsole(`${firstDetailVisible ? 'Closed' : 'Opened'} all lyric interpretations`);
         }
         
         function generateExplanationContent() {
@@ -622,6 +842,10 @@ let activeExplanation = ${explanationString};
         
         window.onload = () => {
             logToAppConsole("App initializing...");
+            
+            // Initialize Google Auth
+            initializeGoogleAuth();
+            
             let dataLoaded = false;
             const saveButton = document.getElementById('save-button');
             

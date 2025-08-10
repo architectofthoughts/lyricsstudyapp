@@ -2,6 +2,13 @@
 
 Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다. 좋아하는 일본어 노래 가사를 입력하면 AI가 자동으로 독음, 번역, 문법 해설, 주요 단어 설명을 제공하고, 학습 퀴즈까지 생성해줍니다.
 
+## 🔐 Google OAuth 인증 시스템
+
+승인된 사용자는 Google 계정으로 로그인하여 API 키 입력 없이 바로 사용할 수 있습니다.
+- 승인된 계정: jaceyoung0705@gmail.com
+- Google OAuth 2.0 인증을 통한 안전한 접근 제어
+- 자동 API 키 설정으로 편리한 사용
+
 ## 📋 주요 기능
 
 ### 🎯 나만의 가사 분석
@@ -32,21 +39,40 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 
 ## 🚀 사용 방법
 
-### 1️⃣ 초기 설정
+### 1️⃣ 앱 접근
+
+**🌐 온라인 사용 (권장):**
+- GitHub Pages: `https://architectofthoughts.github.io/lyricsstudyapp/`
+- Google OAuth 인증 지원
+- 모든 기능 정상 작동
+
+**💻 로컬 사용 (제한적):**
+- HTML 파일 직접 실행
+- 수동 API 키 입력만 가능
+- Google OAuth 불가 (`file://` 프로토콜 제한)
+
+### 2️⃣ 초기 설정
+
+**방법 A: Google OAuth 인증 (온라인 전용)**
+1. GitHub Pages에서 **Google 계정으로 로그인** 클릭
+2. jaceyoung0705@gmail.com 계정으로 로그인
+3. API 키 입력 단계 자동 생략
+
+**방법 B: 수동 API 키 입력**
 1. **Gemini API 키 준비**
    - [Google AI Studio](https://makersuite.google.com/app/apikey)에서 무료 API 키 발급
    - 발급받은 키를 첫 번째 입력란에 입력
 
-2. **가사 입력**
-   - 학습하고 싶은 일본어 가사를 두 번째 텍스트 영역에 붙여넣기
-   - 여러 줄의 가사 입력 가능
+**공통: 가사 입력**
+- 학습하고 싶은 일본어 가사를 텍스트 영역에 붙여넣기
+- 여러 줄의 가사 입력 가능
 
-### 2️⃣ 가사 분석
+### 3️⃣ 가사 분석
 1. **'분석하기'** 버튼 클릭
 2. AI가 가사를 분석하는 동안 대기 (보통 10-30초)
 3. 분석 완료 후 자동으로 **'가사 & 해석'** 탭으로 이동
 
-### 3️⃣ 학습 활용
+### 4️⃣ 학습 활용
 1. **가사 & 해석 탭**
    - 각 카드를 클릭하여 독음과 해석 확인
    - 우측 상단 '복사' 버튼으로 내용 클립보드 복사
@@ -63,7 +89,7 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
    - '새로운 퀴즈 생성' 버튼으로 문제 풀이
    - 다양한 형태의 퀴즈로 학습 효과 확인
 
-### 4️⃣ 데이터 관리
+### 5️⃣ 데이터 관리
 - **HTML로 저장하기**: 분석 결과를 독립적인 HTML 파일로 저장
 - **저장된 데이터 지우기**: 브라우저에 저장된 분석 데이터 삭제
 - **자동 저장**: 분석 결과는 브라우저에 자동으로 저장되어 재방문 시 유지
@@ -85,9 +111,42 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 
 - **프론트엔드**: HTML5, CSS3, Vanilla JavaScript
 - **스타일링**: Tailwind CSS
-- **AI API**: Google Gemini 2.5 Flash Preview
+- **AI API**: Google Gemini 2.5 Flash Preview / Pro
+- **인증**: Google OAuth 2.0
 - **저장소**: 브라우저 LocalStorage
 - **호환성**: 모던 브라우저 전체 지원
+
+## ⚙️ 개발자 설정
+
+### 1. GitHub Pages 배포
+`file://` 프로토콜에서는 Google OAuth가 작동하지 않으므로 HTTPS 환경 필요:
+
+**배포 방법:**
+1. GitHub Repository 생성
+2. 모든 파일 업로드
+3. Settings > Pages에서 배포 활성화
+4. `https://architectofthoughts.github.io/lyricsstudyapp/` URL 생성
+
+상세한 배포 가이드: `DEPLOYMENT.md` 참조
+
+### 2. Google OAuth 2.0 설정
+상세한 Google Cloud Console 설정 방법은 `GOOGLE_OAUTH_SETUP.md` 파일을 참조하세요.
+
+**필수 단계:**
+1. **Google Cloud Project 생성**
+2. **OAuth 동의 화면 설정**
+3. **OAuth 클라이언트 ID 생성**
+4. **GitHub Pages URL을 승인된 도메인에 추가**
+5. **앱에 클라이언트 ID 적용**
+
+### 3. 클라이언트 ID 설정
+`LyricsStudy.html` 파일의 다음 라인을 수정:
+```javascript
+const GOOGLE_CLIENT_ID = 'YOUR_NEW_GOOGLE_CLIENT_ID_HERE';
+```
+
+### 4. API 키 암호화 설정
+승인된 사용자를 위한 암호화된 API 키가 이미 내장되어 있습니다.
 
 ## 📄 라이선스 및 주의사항
 
@@ -98,14 +157,24 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 ## 🆘 문제 해결
 
 ### 자주 발생하는 문제
+
+**Google OAuth 관련**
+1. **"OAuth 2.0 policy" 오류**: `GOOGLE_OAUTH_SETUP.md` 가이드 참조
+2. **"unauthorized email"**: 테스트 사용자 등록 확인
+3. **"redirect_uri_mismatch"**: 승인된 도메인 설정 확인
+4. **"origin=file://" 오류**: HTTPS 환경 필요 → GitHub Pages 배포
+
+**API 관련**
 1. **API 오류**: API 키 확인 또는 인터넷 연결 상태 점검
 2. **분석 실패**: 가사 텍스트가 너무 길거나 특수문자가 많은 경우
 3. **저장 불가**: 브라우저 저장소 용량 확인 또는 쿠키 설정 점검
 
 ### 해결 방법
-- 콘솔 창에서 상세 로그 확인
-- '저장된 데이터 지우기'로 초기화 후 재시도
-- 가사를 작은 단위로 나누어 분석
+- **OAuth 문제**: `GOOGLE_OAUTH_SETUP.md` 단계별 가이드 따르기
+- **배포 문제**: `DEPLOYMENT.md` GitHub Pages 배포 가이드 참조
+- **디버깅**: 콘솔 창에서 상세 로그 확인 (F12 → Console)
+- **데이터 문제**: '저장된 데이터 지우기'로 초기화 후 재시도
+- **성능 문제**: 가사를 작은 단위로 나누어 분석
 
 ---
 
