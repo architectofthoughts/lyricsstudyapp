@@ -36,7 +36,7 @@
             <div class="flex justify-between items-start mb-6 lg:mb-4">
                 <div class="flex-1 flex justify-start items-start pt-2">
                     <div id="version-info" class="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-600">
-                        v<span id="app-version">1.1.0</span>
+                        v<span id="app-version">1.2.0</span>
                     </div>
                 </div>
                 <div class="flex-1 text-center">
@@ -87,8 +87,57 @@
                         <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash (빠름, 경제적)</option>
                         <option value="gemini-2.5-pro">Gemini 2.5 Pro (정확함, 고품질)</option>
                     </select>
-                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">3. 분석할 일본어 가사 입력</h2>
-                    <textarea id="user-lyrics-input" class="w-full h-48 p-3 rounded-lg" placeholder="이곳에 일본어 가사를 붙여넣으세요..."></textarea>
+                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">3. 가사 입력 방법 선택</h2>
+                    <div class="mb-6 flex flex-col sm:flex-row gap-2">
+                        <button onclick="toggleInputMethod('search')" id="search-method-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">🔍 노래 검색으로 가져오기</button>
+                        <button onclick="toggleInputMethod('manual')" id="manual-method-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">✏️ 직접 입력하기</button>
+                    </div>
+                    
+                    <!-- 노래 검색 섹션 -->
+                    <div id="search-input-section" class="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-600">
+                        <h3 class="text-lg font-bold text-white mb-3">🎵 노래 제목으로 가사 검색</h3>
+                        <p class="text-gray-400 text-sm mb-3">노래 제목이나 아티스트를 입력하면 AI가 정확한 곡을 찾아 가사를 가져옵니다.</p>
+                        <input id="song-search-input" type="text" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 mb-3" placeholder="예: 레몬, Lemon 米津玄師, 우주를 달린다">
+                        <button onclick="searchSongLyrics()" id="search-lyrics-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">가사 검색하기</button>
+                        
+                        <!-- 검색 진행 상황 -->
+                        <div id="search-progress" class="hidden mt-4">
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <div id="search-spinner" class="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+                                    <span id="search-status-text" class="text-white font-medium">검색 중...</span>
+                                </div>
+                                <div class="w-full bg-gray-600 rounded-full h-2">
+                                    <div id="search-progress-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 검색 결과 확인 -->
+                        <div id="search-results" class="hidden mt-4">
+                            <div class="bg-gray-700 rounded-lg p-4">
+                                <h4 class="text-white font-bold mb-3">검색 결과 확인</h4>
+                                <div id="inferred-song-info" class="mb-4"></div>
+                                <div id="lyrics-preview" class="mb-4"></div>
+                                <div class="flex gap-2">
+                                    <button onclick="applySearchedLyrics()" id="apply-lyrics-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">이 가사 사용하기</button>
+                                    <button onclick="cancelSearch()" id="cancel-search-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시 검색</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 검색 오류 -->
+                        <div id="search-error" class="hidden mt-4 p-4 bg-red-900 border border-red-600 rounded-lg">
+                            <p id="search-error-text" class="text-red-300"></p>
+                            <button onclick="retrySearch()" id="retry-search-btn" class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시 시도</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 수동 입력 섹션 -->
+                    <div id="manual-input-section" class="hidden mb-6">
+                        <h3 class="text-lg font-bold text-white mb-3">✏️ 직접 가사 입력</h3>
+                        <textarea id="user-lyrics-input" class="w-full h-48 p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400" placeholder="이곳에 일본어 가사를 붙여넣으세요..."></textarea>
+                    </div>
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2">
                         <button onclick="analyzeUserLyrics()" id="analyze-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base">분석하기</button>
                         <button onclick="saveAsHTML()" id="save-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base disabled:opacity-50">HTML로 저장하기</button>
@@ -140,7 +189,12 @@ let activeExplanation = [];
 /* --- End Injected Data --- */
 
         // App Version Management
-        const APP_VERSION = '1.1.0';
+        const APP_VERSION = '1.2.0';
+        
+        // Lyrics search system variables
+        let searchResults = null;
+        let currentSearchInput = '';
+        let isSearchMode = true; // Default to search mode
 
         // Authentication and API key management
         const GOOGLE_CLIENT_ID = '926600143546-4hj7lceacp4um51pru7qfkn70jgmcg08.apps.googleusercontent.com';
@@ -961,6 +1015,310 @@ let activeExplanation = ${explanationString};
             saveButton.disabled = !dataLoaded;
             saveButton.classList.toggle('opacity-50', !dataLoaded);
         };
+        
+        // === LYRICS SEARCH FUNCTIONALITY ===
+        
+        // Toggle between search and manual input methods
+        function toggleInputMethod(method) {
+            const searchMethodBtn = document.getElementById('search-method-btn');
+            const manualMethodBtn = document.getElementById('manual-method-btn');
+            const searchSection = document.getElementById('search-input-section');
+            const manualSection = document.getElementById('manual-input-section');
+            
+            if (method === 'search') {
+                isSearchMode = true;
+                searchMethodBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                searchMethodBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                manualMethodBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                manualMethodBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                searchSection.classList.remove('hidden');
+                manualSection.classList.add('hidden');
+            } else {
+                isSearchMode = false;
+                manualMethodBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+                manualMethodBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                searchMethodBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                searchMethodBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                searchSection.classList.add('hidden');
+                manualSection.classList.remove('hidden');
+            }
+        }
+        
+        // Search for song lyrics
+        async function searchSongLyrics() {
+            const searchInput = document.getElementById('song-search-input').value.trim();
+            
+            if (!searchInput) {
+                alert('노래 제목이나 아티스트를 입력해주세요.');
+                return;
+            }
+            
+            currentSearchInput = searchInput;
+            
+            try {
+                // Show progress
+                showSearchProgress();
+                updateSearchProgress(10, '노래 정보 분석 중...');
+                
+                // Step 1: Infer song title with Gemini
+                const inferredSong = await inferSongTitleWithGemini(searchInput);
+                updateSearchProgress(40, '가사 검색 중...');
+                
+                // Step 2: Search lyrics with LRCLIB
+                const lyrics = await searchLyricsWithLRCLIB(inferredSong.title, inferredSong.artist);
+                updateSearchProgress(80, '검색 결과 처리 중...');
+                
+                // Step 3: Display results for user confirmation
+                displaySearchResults(inferredSong, lyrics);
+                updateSearchProgress(100, '검색 완료!');
+                
+                setTimeout(() => hideSearchProgress(), 1000);
+                
+            } catch (error) {
+                logToAppConsole(`Search error: ${error.message}`, 'error');
+                showSearchError(error.message);
+            }
+        }
+        
+        // Infer song title and artist using Gemini AI
+        async function inferSongTitleWithGemini(userInput) {
+            const apiKey = getAPIKey();
+            if (!apiKey) {
+                throw new Error('API 키가 필요합니다. Google 계정으로 로그인하거나 API 키를 입력해주세요.');
+            }
+            
+            const prompt = `다음 사용자 입력을 바탕으로 정확한 일본어 노래 제목과 아티스트를 추론해주세요.
+사용자 입력: "${userInput}"
+
+다음 JSON 형식으로만 응답해주세요:
+{
+    "title": "정확한 노래 제목 (일본어)",
+    "artist": "아티스트명 (일본어)",
+    "confidence": 0.8,
+    "reasoning": "추론 근거"
+}
+
+추론 규칙:
+1. 한국어로 입력된 제목은 일본어 원제목으로 변환
+2. 영어 제목인 경우 일본어 원제목 찾기
+3. 아티스트가 없으면 유명한 아티스트로 추론
+4. 확신도는 0.1~1.0 범위로 설정`;
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json"
+                }
+            };
+            
+            const modelName = 'gemini-2.5-flash-preview-05-20'; // Use fast model for inference
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Gemini API 오류: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const resultText = data.candidates[0].content.parts[0].text;
+            
+            try {
+                return JSON.parse(resultText);
+            } catch (parseError) {
+                logToAppConsole(`Failed to parse Gemini response: ${resultText}`, 'warn');
+                // Fallback: extract basic info
+                return {
+                    title: userInput,
+                    artist: '',
+                    confidence: 0.5,
+                    reasoning: 'AI 파싱 실패, 원본 입력 사용'
+                };
+            }
+        }
+        
+        // Search lyrics using LRCLIB API
+        async function searchLyricsWithLRCLIB(title, artist) {
+            const params = new URLSearchParams();
+            if (title) params.append('track_name', title);
+            if (artist) params.append('artist_name', artist);
+            
+            const url = `https://lrclib.net/api/search?${params.toString()}`;
+            
+            logToAppConsole(`Searching LRCLIB: ${url}`);
+            
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'JapaneseLyricsStudy/1.2.0 (https://architectofthoughts.github.io/lyricsstudyapp/)'
+                }
+            });
+            
+            if (!response.ok) {
+                // Try fallback with lyrics.ovh
+                return await searchLyricsWithOVH(title, artist);
+            }
+            
+            const data = await response.json();
+            
+            if (!data || data.length === 0) {
+                // Try fallback with lyrics.ovh
+                return await searchLyricsWithOVH(title, artist);
+            }
+            
+            // Use the first result
+            const result = data[0];
+            return {
+                source: 'LRCLIB',
+                title: result.trackName || result.name,
+                artist: result.artistName,
+                album: result.albumName,
+                lyrics: result.plainLyrics || result.syncedLyrics,
+                syncedLyrics: result.syncedLyrics,
+                duration: result.duration
+            };
+        }
+        
+        // Fallback: Search lyrics using lyrics.ovh API
+        async function searchLyricsWithOVH(title, artist) {
+            if (!title || !artist) {
+                throw new Error('lyrics.ovh API는 노래 제목과 아티스트가 모두 필요합니다.');
+            }
+            
+            const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+            
+            logToAppConsole(`Trying lyrics.ovh fallback: ${url}`);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`가사를 찾을 수 없습니다. 다른 검색어로 시도해보세요.`);
+            }
+            
+            const data = await response.json();
+            
+            if (!data.lyrics) {
+                throw new Error('가사 데이터가 없습니다.');
+            }
+            
+            return {
+                source: 'lyrics.ovh',
+                title: title,
+                artist: artist,
+                lyrics: data.lyrics,
+                syncedLyrics: null
+            };
+        }
+        
+        // Display search results for user confirmation
+        function displaySearchResults(inferredSong, lyricsData) {
+            const resultsDiv = document.getElementById('search-results');
+            const songInfoDiv = document.getElementById('inferred-song-info');
+            const lyricsPreviewDiv = document.getElementById('lyrics-preview');
+            
+            // Store results for later use
+            searchResults = {
+                song: inferredSong,
+                lyrics: lyricsData
+            };
+            
+            // Display inferred song info
+            songInfoDiv.innerHTML = `
+                <div class="bg-gray-600 rounded p-3 mb-3">
+                    <h5 class="text-white font-bold text-sm mb-2">🎯 AI가 추론한 노래 정보</h5>
+                    <p class="text-gray-300 text-sm"><strong>제목:</strong> ${inferredSong.title}</p>
+                    <p class="text-gray-300 text-sm"><strong>아티스트:</strong> ${inferredSong.artist}</p>
+                    <p class="text-gray-300 text-sm"><strong>확신도:</strong> ${Math.round(inferredSong.confidence * 100)}%</p>
+                    <p class="text-gray-400 text-xs mt-1">${inferredSong.reasoning}</p>
+                </div>
+            `;
+            
+            // Display lyrics preview
+            const lyricsPreview = lyricsData.lyrics.length > 200 
+                ? lyricsData.lyrics.substring(0, 200) + '...' 
+                : lyricsData.lyrics;
+                
+            lyricsPreviewDiv.innerHTML = `
+                <div class="bg-gray-600 rounded p-3">
+                    <h5 class="text-white font-bold text-sm mb-2">📝 가사 미리보기 (${lyricsData.source})</h5>
+                    <div class="text-gray-300 text-sm max-h-32 overflow-y-auto whitespace-pre-line">${lyricsPreview}</div>
+                </div>
+            `;
+            
+            resultsDiv.classList.remove('hidden');
+        }
+        
+        // Apply searched lyrics to the input field
+        function applySearchedLyrics() {
+            if (!searchResults) {
+                alert('검색 결과가 없습니다.');
+                return;
+            }
+            
+            // Switch to manual input mode and populate the textarea
+            toggleInputMethod('manual');
+            document.getElementById('user-lyrics-input').value = searchResults.lyrics.lyrics;
+            
+            // Hide search results and show success message
+            document.getElementById('search-results').classList.add('hidden');
+            
+            logToAppConsole(`Applied lyrics: ${searchResults.song.title} by ${searchResults.song.artist}`, 'success');
+            alert(`✅ "${searchResults.song.title}" 가사가 입력되었습니다!\n이제 "분석하기" 버튼을 눌러 분석을 시작하세요.`);
+        }
+        
+        // Cancel search and reset
+        function cancelSearch() {
+            document.getElementById('search-results').classList.add('hidden');
+            document.getElementById('song-search-input').value = '';
+            searchResults = null;
+        }
+        
+        // Retry search with same input
+        function retrySearch() {
+            document.getElementById('search-error').classList.add('hidden');
+            if (currentSearchInput) {
+                document.getElementById('song-search-input').value = currentSearchInput;
+                searchSongLyrics();
+            }
+        }
+        
+        // Show search progress
+        function showSearchProgress() {
+            document.getElementById('search-progress').classList.remove('hidden');
+            document.getElementById('search-results').classList.add('hidden');
+            document.getElementById('search-error').classList.add('hidden');
+        }
+        
+        // Hide search progress
+        function hideSearchProgress() {
+            document.getElementById('search-progress').classList.add('hidden');
+        }
+        
+        // Update search progress
+        function updateSearchProgress(percentage, statusText) {
+            document.getElementById('search-progress-bar').style.width = percentage + '%';
+            document.getElementById('search-status-text').textContent = statusText;
+        }
+        
+        // Show search error
+        function showSearchError(errorMessage) {
+            hideSearchProgress();
+            document.getElementById('search-error').classList.remove('hidden');
+            document.getElementById('search-error-text').textContent = errorMessage;
+        }
+        
+        // Initialize UI on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default input method
+            toggleInputMethod('search');
+        });
+        
     </script>
 
 </body></html>
