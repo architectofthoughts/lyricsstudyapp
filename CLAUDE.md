@@ -94,6 +94,17 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 
 ## Development Notes
 
+### Version Management
+- **Current Version**: v1.1.0 (displayed in header)
+- **Version Control**: APP_VERSION constant for systematic version tracking
+- **Update History**: UI fixes, encoding improvements, OAuth enhancements
+
+### Recent Updates (v1.1.0)
+- **UI Layout Fix**: Corrected textarea width responsive design (`w-fll` → `w-full`)
+- **UTF-8 Encoding**: Enhanced Korean username support in Google OAuth with proper Base64 decoding
+- **HTML Export**: Improved save function to exclude login state and reset authentication variables
+- **Version Display**: Added version information in header for user visibility
+
 ### File Structure
 - Single-page application with tabbed interface
 - Uses Tailwind CSS for responsive design
@@ -109,6 +120,7 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 - Google OAuth 2.0 for authorized user authentication
 - Client ID configuration required in Google Cloud Console
 - Encrypted API key storage for authorized users
+- UTF-8 safe Base64 decoding for international characters
 - See GOOGLE_OAUTH_SETUP.md for detailed setup instructions
 
 ## Testing Commands
@@ -130,6 +142,16 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 - **"OAuth 2.0 policy" errors**: Follow GOOGLE_OAUTH_SETUP.md guide
 - **Unauthorized email**: Check test user registration in Google Cloud Console
 - **Domain mismatch**: Verify authorized JavaScript origins in OAuth settings
+- **Korean encoding issues**: Fixed with UTF-8 safe Base64 decoding (v1.1.0+)
+
+### UI Layout Issues
+- **Textarea width problems**: Fixed responsive design issues (v1.1.0+)
+- **Version information**: Version display now visible in header
+- **Mobile compatibility**: Maintained across all screen sizes
+
+### HTML Export Issues
+- **Login state in saved files**: Fixed to exclude authentication state (v1.1.0+)
+- **Clean initial state**: Saved HTML files now start fresh without login UI
 
 ### API Issues  
 - **API Errors**: Check API key and internet connection
