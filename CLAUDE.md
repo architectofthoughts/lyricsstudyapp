@@ -34,6 +34,12 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 - **Random Generation**: Problems generated randomly from learned content
 - **Immediate Feedback**: Answer checking and explanations
 
+### 🔍 Automatic Lyrics Search (v1.2.0)
+- **Smart Song Inference**: Gemini AI converts user input to accurate Japanese titles
+- **Dual API Integration**: LRCLIB (primary) + lyrics.ovh (fallback) for comprehensive coverage
+- **Interactive Search Flow**: Real-time progress tracking with user confirmation steps
+- **Seamless Integration**: Direct connection to existing analysis workflow
+
 ### 🔐 Google OAuth Authentication
 - **Authorized Access**: jaceyoung0705@gmail.com account can login with Google
 - **Auto API Key**: Authenticated users skip API key input step
@@ -73,8 +79,17 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 1. Get Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Enter the API key in the first input field
 
-**Common: Lyrics Input**
-- Paste Japanese lyrics in the text area
+**Lyrics Input Methods (v1.2.0):**
+- **🔍 Song Search (Recommended)**: Enter song title or artist, AI finds and loads lyrics automatically
+- **✏️ Manual Input**: Paste Japanese lyrics directly in the text area
+
+### Song Search Process (v1.2.0)
+1. Enter song title or artist (예: "레몬", "Lemon 米津玄師", "우주를 달린다")
+2. Click "가사 검색하기" (Search Lyrics) button
+3. AI infers accurate Japanese title and artist (10% → 40%)
+4. Searches LRCLIB database for lyrics (40% → 80%)
+5. Review AI inference results and lyrics preview (80% → 100%)
+6. Click "이 가사 사용하기" (Use These Lyrics) to apply
 
 ### Analysis Process
 1. Click "분석하기" (Analyze) button
@@ -95,11 +110,18 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 ## Development Notes
 
 ### Version Management
-- **Current Version**: v1.1.0 (displayed in header)
+- **Current Version**: v1.2.0 (displayed in header)
 - **Version Control**: APP_VERSION constant for systematic version tracking
-- **Update History**: UI fixes, encoding improvements, OAuth enhancements
+- **Update History**: Lyrics search feature, UI fixes, encoding improvements, OAuth enhancements
 
-### Recent Updates (v1.1.0)
+### Recent Updates (v1.2.0)
+- **🔍 Lyrics Auto-Search**: Revolutionary song search feature with Gemini AI inference
+- **🎯 Dual API Integration**: LRCLIB primary API with lyrics.ovh fallback system
+- **📊 Interactive Progress**: Real-time search progress with user confirmation steps
+- **🔄 Seamless Workflow**: Direct integration with existing analysis pipeline
+- **🎨 Enhanced UI**: Search/manual toggle interface with progress indicators
+
+### Previous Updates (v1.1.0)
 - **UI Layout Fix**: Corrected textarea width responsive design (`w-fll` → `w-full`)
 - **UTF-8 Encoding**: Enhanced Korean username support in Google OAuth with proper Base64 decoding
 - **HTML Export**: Improved save function to exclude login state and reset authentication variables
@@ -112,8 +134,10 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 - LocalStorage for data persistence
 
 ### API Integration
-- Gemini 2.5 Flash Preview / Pro models
-- Handles Japanese text analysis, translation, and educational content generation
+- **Gemini 2.5 Flash Preview / Pro**: Japanese text analysis, translation, and educational content generation
+- **LRCLIB API**: Primary lyrics search database (3M+ songs, no API key required)
+- **lyrics.ovh API**: Fallback lyrics search service
+- **Smart API Selection**: Automatic fallback system for maximum success rate
 - API key stored locally in browser only (manual entry) or encrypted in app (OAuth users)
 
 ### OAuth Integration
@@ -148,6 +172,12 @@ A Japanese lyrics learning web application powered by Gemini API with Google OAu
 - **Textarea width problems**: Fixed responsive design issues (v1.1.0+)
 - **Version information**: Version display now visible in header
 - **Mobile compatibility**: Maintained across all screen sizes
+
+### Lyrics Search Issues (v1.2.0+)
+- **Song Not Found**: Try different search terms (English/Korean/Japanese titles)
+- **AI Inference Errors**: Check Gemini API key or try manual input mode
+- **LRCLIB API Timeout**: Automatic fallback to lyrics.ovh or manual input
+- **Network Connection**: Verify internet connection for API calls
 
 ### HTML Export Issues
 - **Login state in saved files**: Fixed to exclude authentication state (v1.1.0+)
