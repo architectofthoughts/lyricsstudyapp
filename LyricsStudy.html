@@ -31,19 +31,24 @@
 <body class="antialiased">
 
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
-        <header class="text-center mb-8">
-            <div class="flex justify-between items-center mb-4">
-                <div></div>
-                <div>
+        <header class="mb-8">
+            <!-- PC 환경에서의 상단 네비게이션 -->
+            <div class="flex justify-between items-start mb-6 lg:mb-4">
+                <div class="flex-1"></div>
+                <div class="flex-1 text-center">
                     <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI 일본어 가사 학습</h1>
                     <p class="text-lg md:text-xl text-gray-400">Gemini API로 나만의 가사 분석하기</p>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div id="google-signin-btn" class="hidden"></div>
-                    <div id="user-info" class="hidden flex items-center space-x-2">
-                        <img id="user-avatar" src="" alt="User" class="w-8 h-8 rounded-full">
-                        <span id="user-name" class="text-sm text-gray-300"></span>
-                        <button onclick="signOut()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white py-1 px-2 rounded">로그아웃</button>
+                <div class="flex-1 flex justify-end items-start pt-2">
+                    <div class="flex items-center space-x-3">
+                        <div id="google-signin-btn" class="hidden"></div>
+                        <div id="user-info" class="hidden flex items-center space-x-3">
+                            <img id="user-avatar" src="" alt="User" class="w-10 h-10 rounded-full border-2 border-gray-600">
+                            <div class="text-right">
+                                <span id="user-name" class="block text-sm text-gray-300 font-medium"></span>
+                                <button onclick="signOut()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded mt-1 transition-colors">로그아웃</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -207,7 +212,20 @@ let activeExplanation = [];
         
         function handleGoogleResponse(response) {
             try {
-                const payload = JSON.parse(atob(response.credential.split('.')[1]));
+                // UTF-8 안전한 Base64 디코딩
+                const base64Payload = response.credential.split('.')[1];
+                // Base64 패딩 추가
+                const paddedPayload = base64Payload + '='.repeat((4 - base64Payload.length % 4) % 4);
+                
+                // UTF-8 안전한 디코딩
+                const decodedPayload = decodeURIComponent(
+                    atob(paddedPayload)
+                        .split('')
+                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                        .join('')
+                );
+                
+                const payload = JSON.parse(decodedPayload);
                 logToAppConsole(`Google sign-in attempt: ${payload.email}`);
                 
                 if (payload.email === AUTHORIZED_EMAIL) {
@@ -266,7 +284,22 @@ let activeExplanation = [];
                 authStatus.classList.remove('hidden');
                 
                 document.getElementById('user-avatar').src = currentUser.picture || '';
-                document.getElementById('user-name').textContent = currentUser.name || 'User';
+                
+                // UTF-8 인코딩 문제 해결을 위한 디코딩
+                let userName = currentUser.name || 'User';
+                try {
+                    // Base64 디코딩이 필요한 경우 처리
+                    if (userName.includes('\\u')) {
+                        userName = JSON.parse('"' + userName + '"');
+                    }
+                    // 추가 UTF-8 디코딩 처리
+                    userName = decodeURIComponent(escape(userName));
+                } catch (e) {
+                    // 디코딩 실패 시 원본 사용
+                    userName = currentUser.name || 'User';
+                }
+                
+                document.getElementById('user-name').textContent = userName;
             } else {
                 googleSigninBtn.classList.remove('hidden');
                 userInfo.classList.add('hidden');
@@ -536,6 +569,25 @@ ${lyricsInput}
             logToAppConsole(`Generating self-contained HTML file: ${fileName}`);
             
             const clonedDocument = document.cloneNode(true);
+            
+            // 로그인 관련 UI 상태 초기화
+            const clonedGoogleSigninBtn = clonedDocument.getElementById('google-signin-btn');
+            const clonedUserInfo = clonedDocument.getElementById('user-info');
+            const clonedApiKeySection = clonedDocument.getElementById('api-key-section');
+            const clonedAuthStatus = clonedDocument.getElementById('auth-status');
+            
+            // 로그인 UI 모두 숨기고 초기 상태로 복원
+            if (clonedGoogleSigninBtn) clonedGoogleSigninBtn.classList.add('hidden');
+            if (clonedUserInfo) clonedUserInfo.classList.add('hidden');
+            if (clonedApiKeySection) clonedApiKeySection.classList.remove('hidden');
+            if (clonedAuthStatus) clonedAuthStatus.classList.add('hidden');
+            
+            // 사용자 정보 초기화
+            const clonedUserAvatar = clonedDocument.getElementById('user-avatar');
+            const clonedUserName = clonedDocument.getElementById('user-name');
+            if (clonedUserAvatar) clonedUserAvatar.src = '';
+            if (clonedUserName) clonedUserName.textContent = '';
+            
             const scriptTag = clonedDocument.querySelector('body > script');
 
             if (!scriptTag) {
@@ -570,6 +622,16 @@ let activeExplanation = ${explanationString};
             } else {
                 scriptContent = dataInjection + scriptContent;
             }
+            
+            // 인증 상태 변수들을 초기 상태로 설정
+            scriptContent = scriptContent.replace(
+                /let currentUser = .*;/g, 
+                'let currentUser = null;'
+            );
+            scriptContent = scriptContent.replace(
+                /let isAuthenticated = .*;/g, 
+                'let isAuthenticated = false;'
+            );
             
             scriptTag.textContent = scriptContent;
 
