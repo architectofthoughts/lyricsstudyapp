@@ -1,33 +1,931 @@
-<html lang="ko"><head>
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 가사 학습 도우미 (Gemini)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #111827; color: #E5E7EB; padding-bottom: 20px; }
-        .tab-button { transition: all 0.3s ease; border-bottom: 2px solid transparent; flex-shrink: 0; }
-        .tab-button.active { border-bottom-color: #4f46e5; color: #F9FAFB; }
-        .content-card { background-color: #1F2937; border: 1px solid #374151; border-radius: 0.75rem; padding: 1.5rem; }
-        .quiz-option, .lyric-card { cursor: pointer; transition: background-color 0.2s; border: 1px solid #4B5563; }
-        .quiz-option:hover, .lyric-card:hover { background-color: #374151; }
-        .quiz-input, #user-api-key { background-color: #374151; border: 1px solid #4B5563; color: #F9FAFB; border-radius: 0.375rem; }
-        .lyric-details { display: none; margin-top: 0.75rem; border-top: 1px solid #374151; padding-top: 0.75rem; }
-        textarea { background-color: #1F2937; border: 1px solid #4B5563; color: #F9FAFB; }
-        .loader { border: 5px solid #374151; border-top: 5px solid #6366f1; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        #app-console { position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background-color: #111827; border-top: 1px solid #374151; z-index: 1000; display: none; flex-direction: column; font-size: 0.875rem; }
-        #app-console-content { flex-grow: 1; overflow-y: auto; padding: 0.5rem; }
-        #app-console-content p { margin: 0; padding: 0.125rem 0.25rem; border-bottom: 1px solid #1f2937; font-family: 'Courier New', Courier, monospace; }
-        #console-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1001; background-color: #374151; border: 1px solid #4B5563; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
-        #console-toggle:hover { background-color: #4B5563; }
-        #console-toggle.active { background-color: #4f46e5; }
-        body.console-open { padding-bottom: 220px; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #111827;
+            color: #E5E7EB;
+            padding-bottom: 20px;
+        }
+
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .tab-button.active {
+            border-bottom-color: #4f46e5;
+            color: #F9FAFB;
+        }
+
+        .content-card {
+            background-color: #1F2937;
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .quiz-option,
+        .lyric-card {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #4B5563;
+        }
+
+        .quiz-option:hover,
+        .lyric-card:hover {
+            background-color: #374151;
+        }
+
+        .quiz-input,
+        #user-api-key {
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            color: #F9FAFB;
+            border-radius: 0.375rem;
+        }
+
+        .lyric-details {
+            display: none;
+            margin-top: 0.75rem;
+            border-top: 1px solid #374151;
+            padding-top: 0.75rem;
+        }
+
+        textarea {
+            background-color: #1F2937;
+            border: 1px solid #4B5563;
+            color: #F9FAFB;
+        }
+
+        .loader {
+            border: 5px solid #374151;
+            border-top: 5px solid #6366f1;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        #app-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background-color: #111827;
+            border-top: 1px solid #374151;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            font-size: 0.875rem;
+        }
+
+        #app-console-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        #app-console-content p {
+            margin: 0;
+            padding: 0.125rem 0.25rem;
+            border-bottom: 1px solid #1f2937;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #console-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            background-color: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #console-toggle:hover {
+            background-color: #4B5563;
+        }
+
+        #console-toggle.active {
+            background-color: #4f46e5;
+        }
+
+        body.console-open {
+            padding-bottom: 220px;
+        }
     </style>
-<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.16 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.absolute{position:absolute}.relative{position:relative}.right-3{right:0.75rem}.top-3{top:0.75rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-2{margin-bottom:0.5rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.mt-1{margin-top:0.25rem}.mb-4{margin-bottom:1rem}.mt-2{margin-top:0.5rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-48{height:12rem}.w-full{width:100%}.max-w-4xl{max-width:56rem}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-4{gap:1rem}.space-x-2 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(0.5rem * var(--tw-space-x-reverse));margin-left:calc(0.5rem * calc(1 - var(--tw-space-x-reverse)))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-lg{border-radius:0.5rem}.border-b{border-bottom-width:1px}.border-gray-700{--tw-border-opacity:1;border-color:rgb(55 65 81 / var(--tw-border-opacity, 1))}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.bg-gray-900{--tw-bg-opacity:1;background-color:rgb(17 24 39 / var(--tw-bg-opacity, 1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74 / var(--tw-bg-opacity, 1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38 / var(--tw-bg-opacity, 1))}.bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pr-10{padding-right:2.5rem}.text-center{text-align:center}.text-2xl{font-size:1.5rem;line-height:2rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.leading-relaxed{line-height:1.625}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-blue-300{--tw-text-opacity:1;color:rgb(147 197 253 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-gray-200{--tw-text-opacity:1;color:rgb(229 231 235 / var(--tw-text-opacity, 1))}.text-blue-400{--tw-text-opacity:1;color:rgb(96 165 250 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-50{opacity:0.5}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-gray-600:hover{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.hover\:bg-green-700:hover{--tw-bg-opacity:1;background-color:rgb(21 128 61 / var(--tw-bg-opacity, 1))}.hover\:bg-indigo-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202 / var(--tw-bg-opacity, 1))}.hover\:bg-red-700:hover{--tw-bg-opacity:1;background-color:rgb(185 28 28 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-500:hover{--tw-bg-opacity:1;background-color:rgb(107 114 128 / var(--tw-bg-opacity, 1))}.disabled\:opacity-50:disabled{opacity:0.5}@media (min-width: 640px){.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}}@media (min-width: 768px){.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:space-x-4 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(1rem * var(--tw-space-x-reverse));margin-left:calc(1rem * calc(1 - var(--tw-space-x-reverse)))}.md\:p-8{padding:2rem}.md\:text-4xl{font-size:2.25rem;line-height:2.5rem}.md\:text-base{font-size:1rem;line-height:1.5rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}</style></head>
+    <style>
+        *,
+        ::before,
+        ::after {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        ::backdrop {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        /* ! tailwindcss v3.4.16 | MIT License | https://tailwindcss.com */
+        *,
+        ::after,
+        ::before {
+            box-sizing: border-box;
+            border-width: 0;
+            border-style: solid;
+            border-color: #e5e7eb
+        }
+
+        ::after,
+        ::before {
+            --tw-content: ''
+        }
+
+        :host,
+        html {
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            -moz-tab-size: 4;
+            tab-size: 4;
+            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        body {
+            margin: 0;
+            line-height: inherit
+        }
+
+        hr {
+            height: 0;
+            color: inherit;
+            border-top-width: 1px
+        }
+
+        abbr:where([title]) {
+            -webkit-text-decoration: underline dotted;
+            text-decoration: underline dotted
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-size: inherit;
+            font-weight: inherit
+        }
+
+        a {
+            color: inherit;
+            text-decoration: inherit
+        }
+
+        b,
+        strong {
+            font-weight: bolder
+        }
+
+        code,
+        kbd,
+        pre,
+        samp {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            font-size: 1em
+        }
+
+        small {
+            font-size: 80%
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        table {
+            text-indent: 0;
+            border-color: inherit;
+            border-collapse: collapse
+        }
+
+        button,
+        input,
+        optgroup,
+        select,
+        textarea {
+            font-family: inherit;
+            font-feature-settings: inherit;
+            font-variation-settings: inherit;
+            font-size: 100%;
+            font-weight: inherit;
+            line-height: inherit;
+            letter-spacing: inherit;
+            color: inherit;
+            margin: 0;
+            padding: 0
+        }
+
+        button,
+        select {
+            text-transform: none
+        }
+
+        button,
+        input:where([type=button]),
+        input:where([type=reset]),
+        input:where([type=submit]) {
+            -webkit-appearance: button;
+            background-color: transparent;
+            background-image: none
+        }
+
+        :-moz-focusring {
+            outline: auto
+        }
+
+        :-moz-ui-invalid {
+            box-shadow: none
+        }
+
+        progress {
+            vertical-align: baseline
+        }
+
+        ::-webkit-inner-spin-button,
+        ::-webkit-outer-spin-button {
+            height: auto
+        }
+
+        [type=search] {
+            -webkit-appearance: textfield;
+            outline-offset: -2px
+        }
+
+        ::-webkit-search-decoration {
+            -webkit-appearance: none
+        }
+
+        ::-webkit-file-upload-button {
+            -webkit-appearance: button;
+            font: inherit
+        }
+
+        summary {
+            display: list-item
+        }
+
+        blockquote,
+        dd,
+        dl,
+        figure,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        hr,
+        p,
+        pre {
+            margin: 0
+        }
+
+        fieldset {
+            margin: 0;
+            padding: 0
+        }
+
+        legend {
+            padding: 0
+        }
+
+        menu,
+        ol,
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0
+        }
+
+        dialog {
+            padding: 0
+        }
+
+        textarea {
+            resize: vertical
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            opacity: 1;
+            color: #9ca3af
+        }
+
+        [role=button],
+        button {
+            cursor: pointer
+        }
+
+        :disabled {
+            cursor: default
+        }
+
+        audio,
+        canvas,
+        embed,
+        iframe,
+        img,
+        object,
+        svg,
+        video {
+            display: block;
+            vertical-align: middle
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            height: auto
+        }
+
+        [hidden]:where(:not([hidden=until-found])) {
+            display: none
+        }
+
+        .container {
+            width: 100%
+        }
+
+        @media (min-width: 640px) {
+            .container {
+                max-width: 640px
+            }
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                max-width: 768px
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 1024px
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .container {
+                max-width: 1280px
+            }
+        }
+
+        @media (min-width: 1536px) {
+            .container {
+                max-width: 1536px
+            }
+        }
+
+        .absolute {
+            position: absolute
+        }
+
+        .relative {
+            position: relative
+        }
+
+        .right-3 {
+            right: 0.75rem
+        }
+
+        .top-3 {
+            top: 0.75rem
+        }
+
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem
+        }
+
+        .mt-4 {
+            margin-top: 1rem
+        }
+
+        .mt-6 {
+            margin-top: 1.5rem
+        }
+
+        .mt-1 {
+            margin-top: 0.25rem
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem
+        }
+
+        .flex {
+            display: flex
+        }
+
+        .grid {
+            display: grid
+        }
+
+        .hidden {
+            display: none
+        }
+
+        .h-48 {
+            height: 12rem
+        }
+
+        .w-full {
+            width: 100%
+        }
+
+        .max-w-4xl {
+            max-width: 56rem
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: repeat(1, minmax(0, 1fr))
+        }
+
+        .items-center {
+            align-items: center
+        }
+
+        .justify-between {
+            justify-content: space-between
+        }
+
+        .gap-2 {
+            gap: 0.5rem
+        }
+
+        .gap-4 {
+            gap: 1rem
+        }
+
+        .space-x-2> :not([hidden])~ :not([hidden]) {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+            margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)))
+        }
+
+        .space-y-4> :not([hidden])~ :not([hidden]) {
+            --tw-space-y-reverse: 0;
+            margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+            margin-bottom: calc(1rem * var(--tw-space-y-reverse))
+        }
+
+        .overflow-x-auto {
+            overflow-x: auto
+        }
+
+        .whitespace-nowrap {
+            white-space: nowrap
+        }
+
+        .rounded {
+            border-radius: 0.25rem
+        }
+
+        .rounded-lg {
+            border-radius: 0.5rem
+        }
+
+        .border-b {
+            border-bottom-width: 1px
+        }
+
+        .border-gray-700 {
+            --tw-border-opacity: 1;
+            border-color: rgb(55 65 81 / var(--tw-border-opacity, 1))
+        }
+
+        .bg-gray-700 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-900 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(17 24 39 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-green-600 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(22 163 74 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-indigo-600 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(79 70 229 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-red-600 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-600 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(75 85 99 / var(--tw-bg-opacity, 1))
+        }
+
+        .p-2 {
+            padding: 0.5rem
+        }
+
+        .p-3 {
+            padding: 0.75rem
+        }
+
+        .p-4 {
+            padding: 1rem
+        }
+
+        .px-2 {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem
+        }
+
+        .px-3 {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem
+        }
+
+        .px-4 {
+            padding-left: 1rem;
+            padding-right: 1rem
+        }
+
+        .py-1 {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem
+        }
+
+        .py-3 {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem
+        }
+
+        .py-4 {
+            padding-top: 1rem;
+            padding-bottom: 1rem
+        }
+
+        .pr-10 {
+            padding-right: 2.5rem
+        }
+
+        .text-center {
+            text-align: center
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+            line-height: 1.75rem
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+            line-height: 1.75rem
+        }
+
+        .font-bold {
+            font-weight: 700
+        }
+
+        .font-medium {
+            font-weight: 500
+        }
+
+        .leading-relaxed {
+            line-height: 1.625
+        }
+
+        .text-gray-300 {
+            --tw-text-opacity: 1;
+            color: rgb(209 213 219 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-400 {
+            --tw-text-opacity: 1;
+            color: rgb(156 163 175 / var(--tw-text-opacity, 1))
+        }
+
+        .text-red-400 {
+            --tw-text-opacity: 1;
+            color: rgb(248 113 113 / var(--tw-text-opacity, 1))
+        }
+
+        .text-white {
+            --tw-text-opacity: 1;
+            color: rgb(255 255 255 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-300 {
+            --tw-text-opacity: 1;
+            color: rgb(147 197 253 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-500 {
+            --tw-text-opacity: 1;
+            color: rgb(107 114 128 / var(--tw-text-opacity, 1))
+        }
+
+        .text-green-400 {
+            --tw-text-opacity: 1;
+            color: rgb(74 222 128 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-200 {
+            --tw-text-opacity: 1;
+            color: rgb(229 231 235 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-400 {
+            --tw-text-opacity: 1;
+            color: rgb(96 165 250 / var(--tw-text-opacity, 1))
+        }
+
+        .antialiased {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale
+        }
+
+        .opacity-50 {
+            opacity: 0.5
+        }
+
+        .transition-colors {
+            transition-property: color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .hover\:bg-gray-600:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(75 85 99 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-green-700:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(21 128 61 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-indigo-700:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(67 56 202 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-red-700:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(185 28 28 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-gray-500:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(107 114 128 / var(--tw-bg-opacity, 1))
+        }
+
+        .disabled\:opacity-50:disabled {
+            opacity: 0.5
+        }
+
+        @media (min-width: 640px) {
+            .sm\:text-3xl {
+                font-size: 1.875rem;
+                line-height: 2.25rem
+            }
+        }
+
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr))
+            }
+
+            .md\:space-x-4> :not([hidden])~ :not([hidden]) {
+                --tw-space-x-reverse: 0;
+                margin-right: calc(1rem * var(--tw-space-x-reverse));
+                margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)))
+            }
+
+            .md\:p-8 {
+                padding: 2rem
+            }
+
+            .md\:text-4xl {
+                font-size: 2.25rem;
+                line-height: 2.5rem
+            }
+
+            .md\:text-base {
+                font-size: 1rem;
+                line-height: 1.5rem
+            }
+
+            .md\:text-xl {
+                font-size: 1.25rem;
+                line-height: 1.75rem
+            }
+        }
+    </style>
+</head>
+
 <body class="antialiased">
 
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
@@ -35,7 +933,8 @@
             <!-- PC 환경에서의 상단 네비게이션 -->
             <div class="flex justify-between items-start mb-6 lg:mb-4">
                 <div class="flex-1 flex justify-start items-start pt-2">
-                    <div id="version-info" class="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-600">
+                    <div id="version-info"
+                        class="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded border border-gray-600">
                         v<span id="app-version">1.2.0</span>
                     </div>
                 </div>
@@ -43,76 +942,97 @@
                     <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">AI 일본어 가사 학습</h1>
                     <p class="text-lg md:text-xl text-gray-400">Gemini API로 나만의 가사 분석하기</p>
                 </div>
-                <div class="flex-1 flex justify-end items-start pt-2">
-                    <div class="flex items-center space-x-3">
-                        <div id="google-signin-btn" class="hidden"></div>
-                        <div id="user-info" class="hidden flex items-center space-x-3">
-                            <img id="user-avatar" src="" alt="User" class="w-10 h-10 rounded-full border-2 border-gray-600">
-                            <div class="text-right">
-                                <span id="user-name" class="block text-sm text-gray-300 font-medium"></span>
-                                <button onclick="signOut()" class="text-xs bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded mt-1 transition-colors">로그아웃</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="flex-1 flex justify-end items-start pt-2"></div>
             </div>
         </header>
-        
+
         <div class="mb-6 border-b border-gray-700">
             <nav class="flex space-x-2 md:space-x-4 overflow-x-auto whitespace-nowrap no-scrollbar" aria-label="Tabs">
-                <button onclick="changeTab('analyze')" class="tab-button py-4 px-2 text-sm font-medium active" data-tab="analyze">나만의 가사 분석</button>
-                <button onclick="changeTab('lyrics')" class="tab-button py-4 px-2 text-sm font-medium" data-tab="lyrics">가사 & 해석</button>
-                <button onclick="changeTab('explanation')" class="tab-button py-4 px-2 text-sm font-medium" data-tab="explanation">상세 해설</button>
-                <button onclick="changeTab('vocab')" class="tab-button py-4 px-2 text-sm font-medium" data-tab="vocab">주요 단어</button>
-                <button onclick="changeTab('quiz')" class="tab-button py-4 px-2 text-sm font-medium" data-tab="quiz">가사 퀴즈</button>
+                <button onclick="changeTab('analyze')" class="tab-button py-4 px-2 text-sm font-medium active"
+                    data-tab="analyze">나만의 가사 분석</button>
+                <button onclick="changeTab('lyrics')" class="tab-button py-4 px-2 text-sm font-medium"
+                    data-tab="lyrics">가사 & 해석</button>
+                <button onclick="changeTab('explanation')" class="tab-button py-4 px-2 text-sm font-medium"
+                    data-tab="explanation">상세 해설</button>
+                <button onclick="changeTab('vocab')" class="tab-button py-4 px-2 text-sm font-medium"
+                    data-tab="vocab">주요 단어</button>
+                <button onclick="changeTab('quiz')" class="tab-button py-4 px-2 text-sm font-medium" data-tab="quiz">가사
+                    퀴즈</button>
             </nav>
         </div>
-        
+
         <main id="tab-content">
             <div id="analyze-content" class="">
-                <div class="content-card">
-                    <div id="api-key-section">
-                        <h2 class="text-2xl font-bold text-white mb-2">1. Gemini API 키 입력</h2>
-                        <input type="password" id="user-api-key" class="w-full p-3 rounded-lg" placeholder="이곳에 자신의 Gemini API 키를 입력하세요.">
-                        <p class="text-sm text-gray-400 mt-2">
-                            또는 <button onclick="handleGoogleSignIn()" class="text-blue-400 hover:text-blue-300 underline">Google 계정으로 로그인</button>하여 API 키 입력을 건너뛸 수 있습니다.
-                        </p>
+                <div class="content-card space-y-6">
+                    <p class="text-sm text-gray-400">Google AI Studio에서 발급받은 Gemini API 키가 필요합니다. 개인 기기에서는 아래 저장 옵션을
+                        사용하면 다음 방문에도 자동으로 불러옵니다.</p>
+
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-3">1. Gemini API 키 입력</h2>
+                        <div class="p-4 bg-gray-800 rounded-lg border border-gray-600 space-y-3">
+                            <div>
+                                <label for="user-api-key" class="block text-sm font-semibold text-gray-200 mb-2">🔑
+                                    Gemini API 키</label>
+                                <input id="user-api-key" type="password" autocomplete="off"
+                                    class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400"
+                                    placeholder="AIza...">
+                            </div>
+                            <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+                                <input type="checkbox" id="remember-api-key" class="w-4 h-4">
+                                <span>이 브라우저에 API 키 저장 (개인 기기에서만 권장)</span>
+                            </label>
+                            <p class="text-xs text-gray-500 leading-relaxed">키는 브라우저 LocalStorage에만 저장되며 서버로 전송되지 않습니다.
+                            </p>
+                        </div>
                     </div>
-                    <div id="auth-status" class="hidden">
-                        <h2 class="text-2xl font-bold text-white mb-2">✓ 인증 완료</h2>
-                        <p class="text-green-400 text-sm">Google 계정으로 로그인되어 API 키가 자동으로 설정되었습니다.</p>
+
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-3">2. 분석 모델 선택</h2>
+                        <select id="model-selection"
+                            class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white">
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash (빠름, 경제적)</option>
+                            <option value="gemini-3-pro-preview">Gemini 3.0 Pro Preview (고품질)</option>
+                        </select>
                     </div>
-                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">2. 분석 모델 선택</h2>
-                    <select id="model-selection" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white">
-                        <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash (빠름, 경제적)</option>
-                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (정확함, 고품질)</option>
-                    </select>
-                    <h2 class="text-2xl font-bold text-white mb-2 mt-6">3. 가사 입력 방법 선택</h2>
+
+                    <h2 class="text-2xl font-bold text-white">3. 가사 입력 방법 선택</h2>
                     <div class="mb-6 flex flex-col sm:flex-row gap-2">
-                        <button onclick="toggleInputMethod('search')" id="search-method-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">🔍 노래 검색으로 가져오기</button>
-                        <button onclick="toggleInputMethod('manual')" id="manual-method-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">✏️ 직접 입력하기</button>
+                        <button onclick="toggleInputMethod('search')" id="search-method-btn"
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">🔍
+                            노래 검색으로 가져오기</button>
+                        <button onclick="toggleInputMethod('manual')" id="manual-method-btn"
+                            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">✏️
+                            직접 입력하기</button>
                     </div>
-                    
+
                     <!-- 노래 검색 섹션 -->
                     <div id="search-input-section" class="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-600">
                         <h3 class="text-lg font-bold text-white mb-3">🎵 노래 제목으로 가사 검색</h3>
                         <p class="text-gray-400 text-sm mb-3">노래 제목이나 아티스트를 입력하면 AI가 정확한 곡을 찾아 가사를 가져옵니다.</p>
-                        <input id="song-search-input" type="text" class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 mb-3" placeholder="예: 레몬, Lemon 米津玄師, 우주를 달린다">
-                        <button onclick="searchSongLyrics()" id="search-lyrics-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">가사 검색하기</button>
-                        
+                        <input id="song-search-input" type="text"
+                            class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400 mb-3"
+                            placeholder="예: 레몬, Lemon 米津玄師, 우주를 달린다">
+                        <button onclick="searchSongLyrics()" id="search-lyrics-btn"
+                            class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">가사
+                            검색하기</button>
+
                         <!-- 검색 진행 상황 -->
                         <div id="search-progress" class="hidden mt-4">
                             <div class="bg-gray-700 rounded-lg p-4">
                                 <div class="flex items-center mb-2">
-                                    <div id="search-spinner" class="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+                                    <div id="search-spinner"
+                                        class="w-4 h-4 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mr-3">
+                                    </div>
                                     <span id="search-status-text" class="text-white font-medium">검색 중...</span>
                                 </div>
                                 <div class="w-full bg-gray-600 rounded-full h-2">
-                                    <div id="search-progress-bar" class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                    <div id="search-progress-bar"
+                                        class="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                        style="width: 0%"></div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- 검색 결과 확인 -->
                         <div id="search-results" class="hidden mt-4">
                             <div class="bg-gray-700 rounded-lg p-4">
@@ -120,29 +1040,51 @@
                                 <div id="inferred-song-info" class="mb-4"></div>
                                 <div id="lyrics-preview" class="mb-4"></div>
                                 <div class="flex gap-2">
-                                    <button onclick="applySearchedLyrics()" id="apply-lyrics-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">이 가사 사용하기</button>
-                                    <button onclick="cancelSearch()" id="cancel-search-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시 검색</button>
+                                    <button onclick="applySearchedLyrics()" id="apply-lyrics-btn"
+                                        class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">이
+                                        가사 사용하기</button>
+                                    <button onclick="cancelSearch()" id="cancel-search-btn"
+                                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시
+                                        검색</button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- 검색 오류 -->
                         <div id="search-error" class="hidden mt-4 p-4 bg-red-900 border border-red-600 rounded-lg">
                             <p id="search-error-text" class="text-red-300"></p>
-                            <button onclick="retrySearch()" id="retry-search-btn" class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시 시도</button>
+                            <button onclick="retrySearch()" id="retry-search-btn"
+                                class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">다시
+                                시도</button>
                         </div>
                     </div>
-                    
+
                     <!-- 수동 입력 섹션 -->
-                    <div id="manual-input-section" class="hidden mb-6">
-                        <h3 class="text-lg font-bold text-white mb-3">✏️ 직접 가사 입력</h3>
-                        <textarea id="user-lyrics-input" class="w-full h-48 p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400" placeholder="이곳에 일본어 가사를 붙여넣으세요..."></textarea>
+                    <div id="manual-input-section"
+                        class="hidden mb-6 p-4 bg-gray-800 rounded-lg border border-gray-600 space-y-4">
+                        <h3 class="text-lg font-bold text-white">✏️ 직접 가사 입력</h3>
+                        <p class="text-gray-400 text-sm">분석할 일본어 가사를 붙여넣고 아래 버튼을 눌러주세요.</p>
+
+                        <div>
+                            <label for="user-lyrics-input" class="block text-sm font-semibold text-gray-200 mb-2">📝 분석할
+                                일본어 가사</label>
+                            <textarea id="user-lyrics-input" rows="10"
+                                class="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 text-white placeholder-gray-400"
+                                placeholder="여기에 분석할 일본어 가사를 붙여넣으세요. 여러 줄을 입력할 수 있습니다."></textarea>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-2">
+                            <button onclick="analyzeUserLyrics()" id="analyze-button"
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">분석하기</button>
+                            <button onclick="saveAsHTML()" id="save-button"
+                                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors opacity-50"
+                                disabled>HTML로 저장</button>
+                            <button onclick="clearSavedData()" id="clear-button"
+                                class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">저장된
+                                데이터 지우기</button>
+                        </div>
                     </div>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <button onclick="analyzeUserLyrics()" id="analyze-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base">분석하기</button>
-                        <button onclick="saveAsHTML()" id="save-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base disabled:opacity-50">HTML로 저장하기</button>
-                        <button onclick="clearSavedData()" id="clear-button" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base">저장된 데이터 지우기</button>
-                    </div>
+
                     <div id="loading-spinner" class="hidden">
                         <div class="loader"></div>
                         <p class="text-center text-gray-400">AI가 가사를 분석 중입니다...</p>
@@ -150,7 +1092,7 @@
                     <p id="api-error" class="text-red-400 mt-4 text-center"></p>
                 </div>
             </div>
-            
+
             <div id="lyrics-content" class="space-y-4 hidden"></div>
             <div id="explanation-content" class="hidden"></div>
             <div id="vocab-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden"></div>
@@ -165,7 +1107,7 @@
     <!-- Console Toggle Button -->
     <div id="console-toggle" onclick="toggleConsole()">
         <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M4 4h16v2H4V4zm0 6h16v2H4v-2zm0 6h16v2H4v-2z"/>
+            <path d="M4 4h16v2H4V4zm0 6h16v2H4v-2zm0 6h16v2H4v-2z" />
         </svg>
     </div>
 
@@ -174,215 +1116,88 @@
         <div class="bg-gray-900 p-2 flex justify-between items-center border-b border-gray-700">
             <h3 class="font-bold text-gray-300">App Status Console</h3>
             <div class="space-x-2">
-                <button onclick="document.getElementById('app-console-content').innerHTML = ''" class="bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded">Clear</button>
-                <button onclick="toggleConsole()" class="bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded">Close</button>
+                <button onclick="document.getElementById('app-console-content').innerHTML = ''"
+                    class="bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded">Clear</button>
+                <button onclick="toggleConsole()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white text-xs py-1 px-3 rounded">Close</button>
             </div>
         </div>
         <div id="app-console-content"></div>
     </div>
 
     <script>
-/* --- Injected Data For Saved File --- */
-let activeLyricsData = [];
-let activeVocabData = [];
-let activeExplanation = [];
-/* --- End Injected Data --- */
+        /* --- Injected Data For Saved File --- */
+        let activeLyricsData = [];
+        let activeVocabData = [];
+        let activeExplanation = [];
+        /* --- End Injected Data --- */
 
         // App Version Management
         const APP_VERSION = '1.2.0';
-        
+
         // Lyrics search system variables
         let searchResults = null;
         let currentSearchInput = '';
         let isSearchMode = true; // Default to search mode
 
-        // Authentication and API key management
-        const GOOGLE_CLIENT_ID = '926600143546-4hj7lceacp4um51pru7qfkn70jgmcg08.apps.googleusercontent.com';
-        const AUTHORIZED_EMAIL = 'jaceyoung0705@gmail.com';
-        
-        // Simple encryption/decryption (Note: This is basic obfuscation, not secure encryption)
-        const ENCRYPTION_KEY = 'JapaneseLyricsStudyApp2025!@#$%';
-        
-        function simpleEncrypt(text, key) {
-            let result = '';
-            for (let i = 0; i < text.length; i++) {
-                result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-            }
-            return btoa(result);
+        // API key management
+        const API_KEY_STORAGE_KEY = 'lyricsStudyApiKey';
+
+        function getStoredApiKey() {
+            return localStorage.getItem(API_KEY_STORAGE_KEY);
         }
-        
-        function simpleDecrypt(encryptedText, key) {
-            try {
-                const decodedText = atob(encryptedText);
-                let result = '';
-                for (let i = 0; i < decodedText.length; i++) {
-                    result += String.fromCharCode(decodedText.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-                }
-                return result;
-            } catch (e) {
-                return null;
+
+        function saveApiKey(key) {
+            if (key && key.trim() !== '') {
+                localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
             }
         }
-        
-        // Your encrypted API key
-        const ENCRYPTED_API_KEY = 'CygKAD0cMC46PwBdAScGMzsxSThEE3taQXdSd3Bia305GhcvCzwC';
-        
-        // Helper function to encrypt your API key (run in browser console)
-        // Example: console.log('Encrypted API Key:', encryptAPIKey('your-actual-api-key-here'));
-        function encryptAPIKey(apiKey) {
-            return simpleEncrypt(apiKey, ENCRYPTION_KEY);
+
+        function clearStoredApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE_KEY);
         }
-        
-        // Helper function to test decryption (run in browser console)
-        function testDecryption(encryptedKey) {
-            return simpleDecrypt(encryptedKey, ENCRYPTION_KEY);
-        }
-        
-        let currentUser = null;
-        let isAuthenticated = false;
-        
-        // Google OAuth functions
-        function initializeGoogleAuth() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleResponse,
-                    auto_select: false,
-                    cancel_on_tap_outside: false
-                });
-                
-                google.accounts.id.renderButton(
-                    document.getElementById('google-signin-btn'),
-                    {
-                        theme: 'filled_blue',
-                        size: 'medium',
-                        text: 'signin_with',
-                        width: 200,
-                        locale: 'ko'
-                    }
-                );
-                
-                // Show the sign-in button
-                document.getElementById('google-signin-btn').classList.remove('hidden');
-                logToAppConsole('Google Auth initialized successfully');
-            } else {
-                logToAppConsole('Google GSI library not loaded, retrying...', 'warn');
-                setTimeout(initializeGoogleAuth, 500);
+
+        function initializeApiKeySection() {
+            const apiInput = document.getElementById('user-api-key');
+            const rememberCheckbox = document.getElementById('remember-api-key');
+            const storedKey = getStoredApiKey();
+
+            if (storedKey && apiInput) {
+                apiInput.value = storedKey;
+                if (rememberCheckbox) rememberCheckbox.checked = true;
             }
-        }
-        
-        function handleGoogleResponse(response) {
-            try {
-                // UTF-8 안전한 Base64 디코딩
-                const base64Payload = response.credential.split('.')[1];
-                // Base64 패딩 추가
-                const paddedPayload = base64Payload + '='.repeat((4 - base64Payload.length % 4) % 4);
-                
-                // UTF-8 안전한 디코딩
-                const decodedPayload = decodeURIComponent(
-                    atob(paddedPayload)
-                        .split('')
-                        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                        .join('')
-                );
-                
-                const payload = JSON.parse(decodedPayload);
-                logToAppConsole(`Google sign-in attempt: ${payload.email}`);
-                
-                if (payload.email === AUTHORIZED_EMAIL) {
-                    currentUser = {
-                        name: payload.name,
-                        email: payload.email,
-                        picture: payload.picture
-                    };
-                    isAuthenticated = true;
-                    updateAuthUI();
-                    logToAppConsole('Authentication successful', 'success');
-                    alert(`환영합니다, ${payload.name}님! API 키가 자동으로 설정되었습니다.`);
-                } else {
-                    logToAppConsole(`Unauthorized email: ${payload.email}`, 'warn');
-                    alert(`인증되지 않은 이메일입니다.\n승인된 계정: ${AUTHORIZED_EMAIL}`);
-                }
-            } catch (error) {
-                logToAppConsole(`Google auth error: ${error.message}`, 'error');
-                alert('Google 인증 처리 중 오류가 발생했습니다.');
-            }
-        }
-        
-        function handleGoogleSignIn() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.prompt((notification) => {
-                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        logToAppConsole('Google sign-in was skipped or not displayed', 'warn');
+
+            if (apiInput && rememberCheckbox) {
+                apiInput.addEventListener('input', () => {
+                    if (rememberCheckbox.checked) {
+                        saveApiKey(apiInput.value);
                     }
                 });
-            } else {
-                alert('Google OAuth가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
-            }
-        }
-        
-        function signOut() {
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.disableAutoSelect();
-            }
-            currentUser = null;
-            isAuthenticated = false;
-            updateAuthUI();
-            logToAppConsole('User signed out');
-            alert('로그아웃되었습니다.');
-        }
-        
-        function updateAuthUI() {
-            const googleSigninBtn = document.getElementById('google-signin-btn');
-            const userInfo = document.getElementById('user-info');
-            const apiKeySection = document.getElementById('api-key-section');
-            const authStatus = document.getElementById('auth-status');
-            
-            if (isAuthenticated && currentUser) {
-                googleSigninBtn.classList.add('hidden');
-                userInfo.classList.remove('hidden');
-                apiKeySection.classList.add('hidden');
-                authStatus.classList.remove('hidden');
-                
-                document.getElementById('user-avatar').src = currentUser.picture || '';
-                
-                // UTF-8 인코딩 문제 해결을 위한 디코딩
-                let userName = currentUser.name || 'User';
-                try {
-                    // Base64 디코딩이 필요한 경우 처리
-                    if (userName.includes('\\u')) {
-                        userName = JSON.parse('"' + userName + '"');
+
+                rememberCheckbox.addEventListener('change', () => {
+                    if (rememberCheckbox.checked) {
+                        saveApiKey(apiInput.value);
+                    } else {
+                        clearStoredApiKey();
                     }
-                    // 추가 UTF-8 디코딩 처리
-                    userName = decodeURIComponent(escape(userName));
-                } catch (e) {
-                    // 디코딩 실패 시 원본 사용
-                    userName = currentUser.name || 'User';
-                }
-                
-                document.getElementById('user-name').textContent = userName;
-            } else {
-                googleSigninBtn.classList.remove('hidden');
-                userInfo.classList.add('hidden');
-                apiKeySection.classList.remove('hidden');
-                authStatus.classList.add('hidden');
+                });
             }
         }
-        
+
         function getAPIKey() {
-            if (isAuthenticated) {
-                // Return the decrypted API key for authenticated users
-                const decryptedKey = simpleDecrypt(ENCRYPTED_API_KEY, ENCRYPTION_KEY);
-                if (decryptedKey) {
-                    return decryptedKey;
-                } else {
-                    logToAppConsole('Failed to decrypt API key', 'error');
-                    return null;
-                }
-            } else {
-                // Return manually entered API key for unauthenticated users
-                return document.getElementById('user-api-key').value;
+            const apiInput = document.getElementById('user-api-key');
+            if (!apiInput) return '';
+
+            const trimmedValue = apiInput.value.trim();
+            if (trimmedValue) return trimmedValue;
+
+            const storedKey = getStoredApiKey();
+            if (storedKey) {
+                apiInput.value = storedKey;
+                return storedKey;
             }
+
+            return '';
         }
 
         function logToAppConsole(message, type = 'info') {
@@ -408,7 +1223,7 @@ let activeExplanation = [];
             const console = document.getElementById('app-console');
             const toggle = document.getElementById('console-toggle');
             const body = document.body;
-            
+
             if (console.style.display === 'none' || console.style.display === '') {
                 console.style.display = 'flex';
                 toggle.classList.add('active');
@@ -421,7 +1236,7 @@ let activeExplanation = [];
             }
         }
 
-        window.onerror = function(message, source, lineno, colno, error) {
+        window.onerror = function (message, source, lineno, colno, error) {
             logToAppConsole(`Uncaught Error: ${message} in ${source.split('/').pop()}:${lineno}`, 'error');
             return true;
         };
@@ -434,32 +1249,28 @@ let activeExplanation = [];
             document.querySelectorAll('.tab-button').forEach(button => button.classList.remove('active'));
             const activeButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
             if (activeButton) activeButton.classList.add('active');
-            
+
             if (activeLyricsData.length === 0 && !['analyze'].includes(tabName)) {
                 tabContent.innerHTML = '<div class="content-card text-center"><p class="text-gray-400">먼저 \'나만의 가사 분석\' 탭에서 가사를 분석해주세요.</p></div>';
                 return;
             }
-            
-            switch(tabName) {
+
+            switch (tabName) {
                 case 'lyrics': generateLyricsContent(); break;
                 case 'explanation': generateExplanationContent(); break;
                 case 'vocab': generateVocabContent(); break;
-                case 'quiz': 
+                case 'quiz':
                     tabContent.innerHTML = `<div class="content-card"><p class="text-gray-400 mb-4 text-center">아래 버튼을 눌러 새로운 퀴즈에 도전해보세요!</p><button onclick="generateRandomQuiz()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors w-full md:w-auto mx-auto block">새로운 퀴즈 생성</button><div id="quiz-container" class="mt-6 text-left"></div><div id="quiz-feedback" class="mt-4 font-bold text-lg text-center"></div></div>`;
                     break;
             }
         }
-        
+
         async function analyzeUserLyrics() {
             logToAppConsole("Attempting to analyze lyrics...");
             const apiKey = getAPIKey();
             if (!apiKey || apiKey.trim() === "") {
                 logToAppConsole("API key is missing.", 'warn');
-                if (isAuthenticated) {
-                    alert("API 키를 복호화하는 중 오류가 발생했습니다. 개발자에게 문의해주세요.");
-                } else {
-                    alert("Gemini API 키를 입력하거나 Google 계정으로 로그인해주세요.");
-                }
+                alert("Gemini API 키를 입력해주세요.");
                 return;
             }
             const lyricsInput = document.getElementById('user-lyrics-input').value;
@@ -474,7 +1285,7 @@ let activeExplanation = [];
             const clearButton = document.getElementById('clear-button');
             const saveButton = document.getElementById('save-button');
             const errorP = document.getElementById('api-error');
-            
+
             const setButtonsState = (disabled) => {
                 [analyzeButton, clearButton, saveButton].forEach(btn => {
                     btn.disabled = disabled;
@@ -486,7 +1297,7 @@ let activeExplanation = [];
             loadingSpinner.classList.remove('hidden');
             setButtonsState(true);
             errorP.textContent = '';
-            
+
             const prompt = `Please analyze the following Japanese song lyrics. Provide the output in a structured JSON format.
 1. For each line of the lyrics, provide the original Japanese ('jp'), the Korean pronunciation in Hangul ('read'), and the Korean translation ('kr').
 2. Extract key vocabulary words. For each word, provide: 'term' (the word), 'read' (its reading), 'meaning' (its Korean meaning), and 'description' (a short explanation in Korean, including base form or etymology).
@@ -545,12 +1356,14 @@ ${lyricsInput}
                     }
                 }
             };
-            
+
             try {
                 const modelSelector = document.getElementById('model-selection');
                 const modelName = modelSelector.value;
+                // Gemini 3.0 models are currently in preview and require the v1alpha API version
+                const apiVersion = modelName.includes('gemini-3') ? 'v1alpha' : 'v1beta';
                 logToAppConsole(`Calling Gemini API with model: ${modelName}`);
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                const apiUrl = `https://generativelanguage.googleapis.com/${apiVersion}/models/${modelName}:generateContent?key=${apiKey}`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -561,16 +1374,16 @@ ${lyricsInput}
                     const errorBody = await response.json();
                     throw new Error(`API 요청 실패: ${response.status}. ${errorBody.error?.message || ''}`);
                 }
-                
+
                 const result = await response.json();
                 if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
                     console.error("Invalid API response structure:", result);
                     throw new Error('API가 유효한 텍스트 응답을 반환하지 않았습니다.');
                 }
-                
+
                 const text = result.candidates[0].content.parts[0].text;
                 const parsedData = JSON.parse(text);
-                
+
                 logToAppConsole("API call successful. Parsing data.", 'success');
                 localStorage.setItem('savedLyricsData', JSON.stringify(parsedData));
                 logToAppConsole("Analysis data saved to browser storage.");
@@ -590,7 +1403,7 @@ ${lyricsInput}
                 saveButton.classList.toggle('opacity-50', activeLyricsData.length === 0);
             }
         }
-        
+
         function clearSavedData() {
             if (confirm('저장된 가사 데이터를 정말로 삭제하시겠습니까?')) {
                 logToAppConsole("User initiated clearing of saved data.", 'warn');
@@ -599,56 +1412,44 @@ ${lyricsInput}
                 location.reload();
             }
         }
-        
+
         function saveAsHTML() {
             if (activeLyricsData.length === 0) {
                 logToAppConsole("Save as HTML failed: No data to save.", 'warn');
                 alert("저장할 분석 데이터가 없습니다.");
                 return;
             }
-            
+
             // 파일명 입력받기
             let fileName = prompt("저장할 파일 이름을 입력하세요:", "lyrics-analysis");
             if (fileName === null) {
                 logToAppConsole("Save cancelled by user.", 'info');
                 return; // 사용자가 취소한 경우
             }
-            
+
             // 빈 파일명인 경우 기본값 사용
             if (fileName.trim() === "") {
                 fileName = "lyrics-analysis";
             }
-            
+
             // 파일명에서 안전하지 않은 문자 제거
             fileName = fileName.trim().replace(/[<>:"/\\|?*]/g, '_');
-            
+
             // .html 확장자가 없으면 추가
             if (!fileName.toLowerCase().endsWith('.html')) {
                 fileName += '.html';
             }
-            
+
             logToAppConsole(`Generating self-contained HTML file: ${fileName}`);
-            
+
             const clonedDocument = document.cloneNode(true);
-            
-            // 로그인 관련 UI 상태 초기화
-            const clonedGoogleSigninBtn = clonedDocument.getElementById('google-signin-btn');
-            const clonedUserInfo = clonedDocument.getElementById('user-info');
-            const clonedApiKeySection = clonedDocument.getElementById('api-key-section');
-            const clonedAuthStatus = clonedDocument.getElementById('auth-status');
-            
-            // 로그인 UI 모두 숨기고 초기 상태로 복원
-            if (clonedGoogleSigninBtn) clonedGoogleSigninBtn.classList.add('hidden');
-            if (clonedUserInfo) clonedUserInfo.classList.add('hidden');
-            if (clonedApiKeySection) clonedApiKeySection.classList.remove('hidden');
-            if (clonedAuthStatus) clonedAuthStatus.classList.add('hidden');
-            
-            // 사용자 정보 초기화
-            const clonedUserAvatar = clonedDocument.getElementById('user-avatar');
-            const clonedUserName = clonedDocument.getElementById('user-name');
-            if (clonedUserAvatar) clonedUserAvatar.src = '';
-            if (clonedUserName) clonedUserName.textContent = '';
-            
+
+            // 민감한 정보 제거
+            const clonedApiKeyInput = clonedDocument.getElementById('user-api-key');
+            const clonedRememberCheckbox = clonedDocument.getElementById('remember-api-key');
+            if (clonedApiKeyInput) clonedApiKeyInput.value = '';
+            if (clonedRememberCheckbox) clonedRememberCheckbox.checked = false;
+
             const scriptTag = clonedDocument.querySelector('body > script');
 
             if (!scriptTag) {
@@ -656,9 +1457,9 @@ ${lyricsInput}
                 alert("저장에 실패했습니다: 스크립트 태그를 찾을 수 없습니다.");
                 return;
             }
-            
+
             const escapeScriptTag = (str) => str.replace(/<\/script>/g, '<\\/script>');
-            
+
             const lyricsString = escapeScriptTag(JSON.stringify(activeLyricsData, null, 2));
             const vocabString = escapeScriptTag(JSON.stringify(activeVocabData, null, 2));
             const explanationString = escapeScriptTag(JSON.stringify(activeExplanation, null, 2));
@@ -670,12 +1471,12 @@ let activeLyricsData = ${lyricsString};
 let activeVocabData = ${vocabString};
 let activeExplanation = ${explanationString};
 /* --- End Injected Data --- */`;
-            
+
             // 기존 스크립트 내용에서 데이터 부분 교체
             let scriptContent = scriptTag.textContent;
             const dataStartIndex = scriptContent.indexOf('/* --- Injected Data For Saved File --- */');
             const dataEndIndex = scriptContent.indexOf('/* --- End Injected Data --- */');
-            
+
             if (dataStartIndex !== -1 && dataEndIndex !== -1) {
                 const beforeData = scriptContent.substring(0, dataStartIndex);
                 const afterData = scriptContent.substring(dataEndIndex + '/* --- End Injected Data --- */'.length);
@@ -683,17 +1484,7 @@ let activeExplanation = ${explanationString};
             } else {
                 scriptContent = dataInjection + scriptContent;
             }
-            
-            // 인증 상태 변수들을 초기 상태로 설정
-            scriptContent = scriptContent.replace(
-                /let currentUser = .*;/g, 
-                'let currentUser = null;'
-            );
-            scriptContent = scriptContent.replace(
-                /let isAuthenticated = .*;/g, 
-                'let isAuthenticated = false;'
-            );
-            
+
             scriptTag.textContent = scriptContent;
 
             const finalHtml = clonedDocument.documentElement.outerHTML;
@@ -724,27 +1515,27 @@ let activeExplanation = ${explanationString};
                 logToAppConsole(`Failed to copy: ${err}`, 'error');
             });
         }
-        
+
         function generateLyricsContent() {
             logToAppConsole(`Generating lyrics display for ${activeLyricsData.length} lines.`);
             const container = document.getElementById('lyrics-content');
             container.innerHTML = '';
-            
+
             // Add expand all button
             const expandAllButton = document.createElement('button');
             expandAllButton.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors text-sm md:text-base mb-4';
             expandAllButton.textContent = '모든 해석 열기';
             expandAllButton.onclick = toggleAllLyricDetails;
             container.appendChild(expandAllButton);
-            
+
             activeLyricsData.forEach(line => {
                 const card = document.createElement('div');
                 card.className = 'content-card text-center lyric-card relative';
-                
+
                 const safeJp = line.jp.replace(/'/g, "\\'");
                 const safeRead = line.read.replace(/'/g, "\\'");
                 const safeKr = line.kr.replace(/'/g, "\\'");
-                
+
                 card.innerHTML = `
                     <button onclick="copyLyricToClipboard(event, '${safeJp}', '${safeRead}', '${safeKr}')" class="absolute top-3 right-3 bg-gray-600 hover:bg-gray-500 text-white text-xs py-1 px-2 rounded transition-colors">복사</button>
                     <p class="text-lg md:text-xl font-medium text-white pr-10">${line.jp}</p>
@@ -753,50 +1544,50 @@ let activeExplanation = ${explanationString};
                         <p class="text-md text-gray-400 mt-1">${line.kr}</p>
                     </div>
                 `;
-                
+
                 card.onclick = (e) => {
                     if (e.target.tagName !== 'BUTTON') {
                         const details = e.currentTarget.querySelector('.lyric-details');
                         details.style.display = details.style.display === 'none' ? 'block' : 'none';
                     }
                 };
-                
+
                 container.appendChild(card);
             });
-            
+
             const helpText = document.createElement('p');
             helpText.className = 'text-center text-gray-500 mt-4';
             helpText.textContent = '카드를 클릭하면 독음과 해석을 보거나 숨길 수 있습니다.';
             container.appendChild(helpText);
         }
-        
+
         function toggleAllLyricDetails() {
             const container = document.getElementById('lyrics-content');
             const button = container.querySelector('button');
             const allDetails = container.querySelectorAll('.lyric-details');
-            
+
             if (!allDetails.length) return;
-            
+
             const firstDetailVisible = allDetails[0].style.display !== 'none';
             const newDisplayState = firstDetailVisible ? 'none' : 'block';
             const newButtonText = firstDetailVisible ? '모든 해석 열기' : '모든 해석 닫기';
-            
+
             allDetails.forEach(detail => {
                 detail.style.display = newDisplayState;
             });
-            
+
             button.textContent = newButtonText;
             logToAppConsole(`${firstDetailVisible ? 'Closed' : 'Opened'} all lyric interpretations`);
         }
-        
+
         function generateExplanationContent() {
             logToAppConsole("Generating detailed explanation display.");
             const container = document.getElementById('explanation-content');
             container.innerHTML = '';
-            
+
             const card = document.createElement('div');
             card.className = 'content-card';
-            
+
             if (activeExplanation && activeExplanation.length > 0) {
                 activeExplanation.forEach(paragraph => {
                     const p = document.createElement('p');
@@ -807,15 +1598,15 @@ let activeExplanation = ${explanationString};
             } else {
                 card.innerHTML = '<p class="text-gray-400">해설 데이터가 없습니다.</p>';
             }
-            
+
             container.appendChild(card);
         }
-        
+
         function generateVocabContent() {
             logToAppConsole(`Generating vocab display for ${activeVocabData.length} words.`);
             const container = document.getElementById('vocab-content');
             container.innerHTML = '';
-            
+
             activeVocabData.forEach(vocab => {
                 const card = document.createElement('div');
                 card.className = 'content-card';
@@ -827,32 +1618,32 @@ let activeExplanation = ${explanationString};
                 container.appendChild(card);
             });
         }
-        
+
         function generateRandomQuiz() {
             logToAppConsole("Generating a new quiz.");
             const quizContainer = document.getElementById('quiz-container');
             const feedbackContainer = document.getElementById('quiz-feedback');
-            
+
             if (!quizContainer || !feedbackContainer) return;
-            
+
             quizContainer.innerHTML = '';
             feedbackContainer.innerHTML = '';
-            
+
             if (activeLyricsData.length === 0) {
                 quizContainer.innerHTML = '<p class="text-gray-500">퀴즈를 생성할 데이터가 없습니다.</p>';
                 return;
             }
-            
+
             const quizType = Math.floor(Math.random() * 3);
             const randomLyric = activeLyricsData[Math.floor(Math.random() * activeLyricsData.length)];
-            
+
             switch (quizType) {
                 case 0: createPronunciationQuiz(randomLyric); break;
                 case 1: createFillInTheBlankQuiz(); break;
                 case 2: createTranslationQuiz(randomLyric); break;
             }
         }
-        
+
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -860,18 +1651,18 @@ let activeExplanation = ${explanationString};
             }
             return array;
         }
-        
+
         function createPronunciationQuiz(lyric) {
             const container = document.getElementById('quiz-container');
             let options = [lyric.read];
-            
+
             while (options.length < 4 && activeLyricsData.length >= 4) {
                 const randomOption = activeLyricsData[Math.floor(Math.random() * activeLyricsData.length)].read;
                 if (!options.includes(randomOption)) options.push(randomOption);
             }
-            
+
             options = shuffleArray(options);
-            
+
             container.innerHTML = `
                 <h3 class="text-lg font-semibold mb-4 text-white">다음 가사의 올바른 독음은?</h3>
                 <p class="text-center text-xl font-bold mb-6 p-4 bg-gray-800 rounded-lg">${lyric.jp}</p>
@@ -880,27 +1671,27 @@ let activeExplanation = ${explanationString};
                 </div>
             `;
         }
-        
+
         function createFillInTheBlankQuiz() {
             const container = document.getElementById('quiz-container');
-            
+
             if (activeVocabData.length < 4) {
                 container.innerHTML = '<p class="text-gray-500">객관식 빈칸 퀴즈를 만들 단어가 부족합니다 (최소 4개 필요).</p>';
                 return;
             }
-            
+
             const randomVocab = activeVocabData[Math.floor(Math.random() * activeVocabData.length)];
             const lyricWithVocab = activeLyricsData.find(l => l.jp.includes(randomVocab.term));
-            
+
             if (!lyricWithVocab) {
                 generateRandomQuiz();
                 return;
             }
-            
+
             const qText = lyricWithVocab.jp.replace(randomVocab.term, ' <span class="text-yellow-400">[_____]</span> ');
             let options = [randomVocab.term];
             let tempVocab = [...activeVocabData];
-            
+
             while (options.length < 4) {
                 const randomIndex = Math.floor(Math.random() * tempVocab.length);
                 const randomOption = tempVocab.splice(randomIndex, 1)[0].term;
@@ -908,9 +1699,9 @@ let activeExplanation = ${explanationString};
                     options.push(randomOption);
                 }
             }
-            
+
             options = shuffleArray(options);
-            
+
             container.innerHTML = `
                 <h3 class="text-lg font-semibold mb-4 text-white">빈칸에 들어갈 알맞은 단어는?</h3>
                 <p class="text-center text-xl mb-6 p-4 bg-gray-800 rounded-lg leading-relaxed">${qText}</p>
@@ -919,18 +1710,18 @@ let activeExplanation = ${explanationString};
                 </div>
             `;
         }
-        
+
         function createTranslationQuiz(lyric) {
             const container = document.getElementById('quiz-container');
             let options = [lyric.kr];
-            
+
             while (options.length < 4 && activeLyricsData.length >= 4) {
                 const randomOption = activeLyricsData[Math.floor(Math.random() * activeLyricsData.length)].kr;
                 if (!options.includes(randomOption)) options.push(randomOption);
             }
-            
+
             options = shuffleArray(options);
-            
+
             container.innerHTML = `
                 <h3 class="text-lg font-semibold mb-4 text-white">다음 가사의 올바른 의미는?</h3>
                 <p class="text-center text-xl font-bold mb-6 p-4 bg-gray-800 rounded-lg">${lyric.jp}</p>
@@ -939,39 +1730,37 @@ let activeExplanation = ${explanationString};
                 </div>
             `;
         }
-        
+
         function checkAnswer(element, selected, correct) {
             const feedbackContainer = document.getElementById('quiz-feedback');
             const isCorrect = selected.trim() === correct.trim();
-            
+
             if (isCorrect) {
                 feedbackContainer.textContent = '정답입니다! 🎉';
                 feedbackContainer.style.color = '#10B981';
-                if(element.tagName === 'DIV') {
+                if (element.tagName === 'DIV') {
                     element.style.backgroundColor = '#10B981';
                     element.style.borderColor = '#10B981';
                 }
             } else {
                 feedbackContainer.innerHTML = `틀렸습니다. 정답은 <span class="text-red-400">'${correct}'</span> 입니다.`;
                 feedbackContainer.style.color = '#F87171';
-                if(element.tagName === 'DIV') {
+                if (element.tagName === 'DIV') {
                     element.style.backgroundColor = '#EF4444';
                     element.style.borderColor = '#EF4444';
                 }
             }
-            
+
             document.querySelectorAll('.quiz-option, .quiz-input, #quiz-container button').forEach(el => el.disabled = true);
         }
-        
+
         window.onload = () => {
             logToAppConsole("App initializing...");
-            
-            // Initialize Google Auth
-            initializeGoogleAuth();
-            
+            initializeApiKeySection();
+
             let dataLoaded = false;
             const saveButton = document.getElementById('save-button');
-            
+
             // Check for injected data first
             if (activeLyricsData.length > 0) {
                 logToAppConsole("Found injected data in HTML. Loading...");
@@ -980,7 +1769,7 @@ let activeExplanation = ${explanationString};
                 changeTab('lyrics');
                 logToAppConsole("Successfully loaded injected data.", 'success');
             }
-            
+
             // Check localStorage if no injected data
             const savedDataJSON = localStorage.getItem('savedLyricsData');
             if (!dataLoaded && savedDataJSON) {
@@ -999,7 +1788,7 @@ let activeExplanation = ${explanationString};
                     localStorage.removeItem('savedLyricsData');
                 }
             }
-            
+
             // Load default example if no data found
             if (!dataLoaded) {
                 logToAppConsole("No saved data found. Loading default example.");
@@ -1011,20 +1800,20 @@ let activeExplanation = ${explanationString};
                 document.getElementById('user-lyrics-input').value = defaultLyrics;
                 changeTab('analyze');
             }
-            
+
             saveButton.disabled = !dataLoaded;
             saveButton.classList.toggle('opacity-50', !dataLoaded);
         };
-        
+
         // === LYRICS SEARCH FUNCTIONALITY ===
-        
+
         // Toggle between search and manual input methods
         function toggleInputMethod(method) {
             const searchMethodBtn = document.getElementById('search-method-btn');
             const manualMethodBtn = document.getElementById('manual-method-btn');
             const searchSection = document.getElementById('search-input-section');
             const manualSection = document.getElementById('manual-input-section');
-            
+
             if (method === 'search') {
                 isSearchMode = true;
                 searchMethodBtn.classList.remove('bg-gray-600', 'hover:bg-gray-700');
@@ -1043,50 +1832,50 @@ let activeExplanation = ${explanationString};
                 manualSection.classList.remove('hidden');
             }
         }
-        
+
         // Search for song lyrics
         async function searchSongLyrics() {
             const searchInput = document.getElementById('song-search-input').value.trim();
-            
+
             if (!searchInput) {
                 alert('노래 제목이나 아티스트를 입력해주세요.');
                 return;
             }
-            
+
             currentSearchInput = searchInput;
-            
+
             try {
                 // Show progress
                 showSearchProgress();
                 updateSearchProgress(10, '노래 정보 분석 중...');
-                
+
                 // Step 1: Infer song title with Gemini
                 const inferredSong = await inferSongTitleWithGemini(searchInput);
                 updateSearchProgress(40, '가사 검색 중...');
-                
+
                 // Step 2: Search lyrics with LRCLIB
                 const lyrics = await searchLyricsWithLRCLIB(inferredSong.title, inferredSong.artist);
                 updateSearchProgress(80, '검색 결과 처리 중...');
-                
+
                 // Step 3: Display results for user confirmation
                 displaySearchResults(inferredSong, lyrics);
                 updateSearchProgress(100, '검색 완료!');
-                
+
                 setTimeout(() => hideSearchProgress(), 1000);
-                
+
             } catch (error) {
                 logToAppConsole(`Search error: ${error.message}`, 'error');
                 showSearchError(error.message);
             }
         }
-        
+
         // Infer song title and artist using Gemini AI
         async function inferSongTitleWithGemini(userInput) {
             const apiKey = getAPIKey();
             if (!apiKey) {
-                throw new Error('API 키가 필요합니다. Google 계정으로 로그인하거나 API 키를 입력해주세요.');
+                throw new Error('API 키가 필요합니다. 상단 입력란에 키를 입력해주세요.');
             }
-            
+
             const prompt = `다음 사용자 입력을 바탕으로 정확한 일본어 노래 제목과 아티스트를 추론해주세요.
 사용자 입력: "${userInput}"
 
@@ -1113,23 +1902,23 @@ let activeExplanation = ${explanationString};
                     responseMimeType: "application/json"
                 }
             };
-            
-            const modelName = 'gemini-2.5-flash-preview-05-20'; // Use fast model for inference
+
+            const modelName = 'gemini-2.5-flash'; // Fast model for inference
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            
+
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
+
             if (!response.ok) {
                 throw new Error(`Gemini API 오류: ${response.status} ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             const resultText = data.candidates[0].content.parts[0].text;
-            
+
             try {
                 return JSON.parse(resultText);
             } catch (parseError) {
@@ -1143,35 +1932,35 @@ let activeExplanation = ${explanationString};
                 };
             }
         }
-        
+
         // Search lyrics using LRCLIB API
         async function searchLyricsWithLRCLIB(title, artist) {
             const params = new URLSearchParams();
             if (title) params.append('track_name', title);
             if (artist) params.append('artist_name', artist);
-            
+
             const url = `https://lrclib.net/api/search?${params.toString()}`;
-            
+
             logToAppConsole(`Searching LRCLIB: ${url}`);
-            
+
             const response = await fetch(url, {
                 headers: {
                     'User-Agent': 'JapaneseLyricsStudy/1.2.0 (https://architectofthoughts.github.io/lyricsstudyapp/)'
                 }
             });
-            
+
             if (!response.ok) {
                 // Try fallback with lyrics.ovh
                 return await searchLyricsWithOVH(title, artist);
             }
-            
+
             const data = await response.json();
-            
+
             if (!data || data.length === 0) {
                 // Try fallback with lyrics.ovh
                 return await searchLyricsWithOVH(title, artist);
             }
-            
+
             // Use the first result
             const result = data[0];
             return {
@@ -1184,29 +1973,29 @@ let activeExplanation = ${explanationString};
                 duration: result.duration
             };
         }
-        
+
         // Fallback: Search lyrics using lyrics.ovh API
         async function searchLyricsWithOVH(title, artist) {
             if (!title || !artist) {
                 throw new Error('lyrics.ovh API는 노래 제목과 아티스트가 모두 필요합니다.');
             }
-            
+
             const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
-            
+
             logToAppConsole(`Trying lyrics.ovh fallback: ${url}`);
-            
+
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error(`가사를 찾을 수 없습니다. 다른 검색어로 시도해보세요.`);
             }
-            
+
             const data = await response.json();
-            
+
             if (!data.lyrics) {
                 throw new Error('가사 데이터가 없습니다.');
             }
-            
+
             return {
                 source: 'lyrics.ovh',
                 title: title,
@@ -1215,19 +2004,19 @@ let activeExplanation = ${explanationString};
                 syncedLyrics: null
             };
         }
-        
+
         // Display search results for user confirmation
         function displaySearchResults(inferredSong, lyricsData) {
             const resultsDiv = document.getElementById('search-results');
             const songInfoDiv = document.getElementById('inferred-song-info');
             const lyricsPreviewDiv = document.getElementById('lyrics-preview');
-            
+
             // Store results for later use
             searchResults = {
                 song: inferredSong,
                 lyrics: lyricsData
             };
-            
+
             // Display inferred song info
             songInfoDiv.innerHTML = `
                 <div class="bg-gray-600 rounded p-3 mb-3">
@@ -1238,47 +2027,47 @@ let activeExplanation = ${explanationString};
                     <p class="text-gray-400 text-xs mt-1">${inferredSong.reasoning}</p>
                 </div>
             `;
-            
+
             // Display lyrics preview
-            const lyricsPreview = lyricsData.lyrics.length > 200 
-                ? lyricsData.lyrics.substring(0, 200) + '...' 
+            const lyricsPreview = lyricsData.lyrics.length > 200
+                ? lyricsData.lyrics.substring(0, 200) + '...'
                 : lyricsData.lyrics;
-                
+
             lyricsPreviewDiv.innerHTML = `
                 <div class="bg-gray-600 rounded p-3">
                     <h5 class="text-white font-bold text-sm mb-2">📝 가사 미리보기 (${lyricsData.source})</h5>
                     <div class="text-gray-300 text-sm max-h-32 overflow-y-auto whitespace-pre-line">${lyricsPreview}</div>
                 </div>
             `;
-            
+
             resultsDiv.classList.remove('hidden');
         }
-        
+
         // Apply searched lyrics to the input field
         function applySearchedLyrics() {
             if (!searchResults) {
                 alert('검색 결과가 없습니다.');
                 return;
             }
-            
+
             // Switch to manual input mode and populate the textarea
             toggleInputMethod('manual');
             document.getElementById('user-lyrics-input').value = searchResults.lyrics.lyrics;
-            
+
             // Hide search results and show success message
             document.getElementById('search-results').classList.add('hidden');
-            
+
             logToAppConsole(`Applied lyrics: ${searchResults.song.title} by ${searchResults.song.artist}`, 'success');
             alert(`✅ "${searchResults.song.title}" 가사가 입력되었습니다!\n이제 "분석하기" 버튼을 눌러 분석을 시작하세요.`);
         }
-        
+
         // Cancel search and reset
         function cancelSearch() {
             document.getElementById('search-results').classList.add('hidden');
             document.getElementById('song-search-input').value = '';
             searchResults = null;
         }
-        
+
         // Retry search with same input
         function retrySearch() {
             document.getElementById('search-error').classList.add('hidden');
@@ -1287,38 +2076,40 @@ let activeExplanation = ${explanationString};
                 searchSongLyrics();
             }
         }
-        
+
         // Show search progress
         function showSearchProgress() {
             document.getElementById('search-progress').classList.remove('hidden');
             document.getElementById('search-results').classList.add('hidden');
             document.getElementById('search-error').classList.add('hidden');
         }
-        
+
         // Hide search progress
         function hideSearchProgress() {
             document.getElementById('search-progress').classList.add('hidden');
         }
-        
+
         // Update search progress
         function updateSearchProgress(percentage, statusText) {
             document.getElementById('search-progress-bar').style.width = percentage + '%';
             document.getElementById('search-status-text').textContent = statusText;
         }
-        
+
         // Show search error
         function showSearchError(errorMessage) {
             hideSearchProgress();
             document.getElementById('search-error').classList.remove('hidden');
             document.getElementById('search-error-text').textContent = errorMessage;
         }
-        
+
         // Initialize UI on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Set default input method
             toggleInputMethod('search');
         });
-        
+
     </script>
 
-</body></html>
+</body>
+
+</html>
