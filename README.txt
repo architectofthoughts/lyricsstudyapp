@@ -2,12 +2,11 @@
 
 Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다. 좋아하는 일본어 노래 가사를 입력하면 AI가 자동으로 독음, 번역, 문법 해설, 주요 단어 설명을 제공하고, 학습 퀴즈까지 생성해줍니다.
 
-## 🔐 Google OAuth 인증 시스템
+## 🔑 Gemini API 키 기반 실행
 
-승인된 사용자는 Google 계정으로 로그인하여 API 키 입력 없이 바로 사용할 수 있습니다.
-- 승인된 계정: jaceyoung0705@gmail.com
-- Google OAuth 2.0 인증을 통한 안전한 접근 제어
-- 자동 API 키 설정으로 편리한 사용
+- Google AI Studio에서 발급받은 개인 Gemini API 키만 있으면 누구나 바로 사용 가능
+- 앱 상단 입력란에 키를 직접 넣고, 필요하면 "이 브라우저에 저장" 체크로 로컬 보관
+- 계정 승인 절차 없이도 실행되며, 키는 사용자 브라우저(LocalStorage)에만 저장됨
 
 ## 📋 주요 기능
 
@@ -49,25 +48,24 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 
 **🌐 온라인 사용 (권장):**
 - GitHub Pages: `https://architectofthoughts.github.io/lyricsstudyapp/`
-- Google OAuth 인증 지원
-- 모든 기능 정상 작동
+- 최신 버전이 즉시 배포되어 항상 동일한 환경 보장
+- API 키 입력 후 노래 검색부터 저장 기능까지 모두 이용 가능
 
-**💻 로컬 사용 (제한적):**
-- HTML 파일 직접 실행
-- 수동 API 키 입력만 가능
-- Google OAuth 불가 (`file://` 프로토콜 제한)
+**💻 로컬 사용:**
+- `LyricsStudy.html` 파일을 브라우저에서 직접 열어 실행
+- Gemini API 키 입력이 필수이며, 네트워크 연결이 있어야 AI 분석/가사 검색 가능
+- 로컬 브라우저 저장소가 별도로 사용되므로 API 키 저장 옵션을 다시 설정해야 함
 
 ### 2️⃣ 초기 설정
 
-**방법 A: Google OAuth 인증 (온라인 전용)**
-1. GitHub Pages에서 **Google 계정으로 로그인** 클릭
-2. jaceyoung0705@gmail.com 계정으로 로그인
-3. API 키 입력 단계 자동 생략
-
-**방법 B: 수동 API 키 입력**
-1. **Gemini API 키 준비**
-   - [Google AI Studio](https://makersuite.google.com/app/apikey)에서 무료 API 키 발급
-   - 발급받은 키를 첫 번째 입력란에 입력
+1. **Gemini API 키 발급**
+   - [Google AI Studio](https://makersuite.google.com/app/apikey) → API Keys → Create API Key
+   - 무료 요금제만으로도 테스트와 개인 학습 용도로 충분한 호출량 제공
+2. **앱에 API 키 입력**
+   - 상단 `Gemini API 키 입력` 영역에서 키를 붙여넣고 필요 시 "이 브라우저에 API 키 저장" 옵션 활성화
+   - 개인 PC라면 "이 브라우저에 API 키 저장" 체크로 LocalStorage에 암호화 없이 저장 가능
+3. **분석할 가사 준비**
+   - 검색 기능으로 가사를 불러오거나, 직접 입력 탭에 학습하고 싶은 가사를 붙여넣기
 
 **가사 입력 방법 선택 🆕 v1.2.0**
 
@@ -138,16 +136,16 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 
 - **프론트엔드**: HTML5, CSS3, Vanilla JavaScript
 - **스타일링**: Tailwind CSS
-- **AI API**: Google Gemini 2.5 Flash Preview / Pro
+- **AI API**: Google Gemini 2.5 Flash / Gemini 3.0 Pro Preview
 - **가사 검색**: LRCLIB API (주요), lyrics.ovh API (대안) 🆕
-- **인증**: Google OAuth 2.0
+- **인증**: 사용자 보유 Gemini API 키 입력
 - **저장소**: 브라우저 LocalStorage
 - **호환성**: 모던 브라우저 전체 지원
 
 ## ⚙️ 개발자 설정
 
 ### 1. GitHub Pages 배포
-`file://` 프로토콜에서는 Google OAuth가 작동하지 않으므로 HTTPS 환경 필요:
+`file://` 프로토콜에서도 실행할 수 있지만, HTTPS 환경에서 동작시키면 가사 검색·저장 기능이 가장 안정적입니다.
 
 **배포 방법:**
 1. GitHub Repository 생성
@@ -157,24 +155,10 @@ Gemini API를 활용한 일본어 가사 학습 웹 애플리케이션입니다.
 
 상세한 배포 가이드: `DEPLOYMENT.md` 참조
 
-### 2. Google OAuth 2.0 설정
-상세한 Google Cloud Console 설정 방법은 `GOOGLE_OAUTH_SETUP.md` 파일을 참조하세요.
-
-**필수 단계:**
-1. **Google Cloud Project 생성**
-2. **OAuth 동의 화면 설정**
-3. **OAuth 클라이언트 ID 생성**
-4. **GitHub Pages URL을 승인된 도메인에 추가**
-5. **앱에 클라이언트 ID 적용**
-
-### 3. 클라이언트 ID 설정
-`LyricsStudy.html` 파일의 다음 라인을 수정:
-```javascript
-const GOOGLE_CLIENT_ID = 'YOUR_NEW_GOOGLE_CLIENT_ID_HERE';
-```
-
-### 4. API 키 암호화 설정
-승인된 사용자를 위한 암호화된 API 키가 이미 내장되어 있습니다.
+### 2. Gemini API 키 관리
+- [Google AI Studio](https://makersuite.google.com/app/apikey)에서 개인 API 키 생성
+- 앱의 "이 브라우저에 API 키 저장" 옵션을 사용하면 LocalStorage에 평문으로 저장되므로 공용 PC에서는 해제 권장
+- 키를 교체하려면 입력란 내용을 지우고 새 키를 입력한 뒤 저장 옵션을 다시 체크
 
 ## 📄 라이선스 및 주의사항
 
@@ -186,12 +170,11 @@ const GOOGLE_CLIENT_ID = 'YOUR_NEW_GOOGLE_CLIENT_ID_HERE';
 
 ### 자주 발생하는 문제
 
-**Google OAuth 관련**
-1. **"OAuth 2.0 policy" 오류**: `GOOGLE_OAUTH_SETUP.md` 가이드 참조
-2. **"unauthorized email"**: 테스트 사용자 등록 확인
-3. **"redirect_uri_mismatch"**: 승인된 도메인 설정 확인
-4. **"origin=file://" 오류**: HTTPS 환경 필요 → GitHub Pages 배포
-5. **한글 사용자명 오류**: v1.1.0에서 UTF-8 인코딩 문제 해결 완료
+**API 키 관련**
+1. **"API key not valid"**: Google AI Studio에서 키 상태 확인 및 재발급
+2. **"PERMISSION_DENIED"**: 프로젝트에 Generative Language API 사용 설정되어 있는지 확인
+3. **일시적으로 호출이 막힘**: Free tier 할당량 초과 여부 확인 후 잠시 대기
+4. **저장한 키가 사라짐**: 브라우저 쿠키/LocalStorage 초기화 여부 확인
 
 **UI/UX 관련**
 1. **텍스트 입력창 크기 문제**: v1.1.0에서 반응형 레이아웃 문제 해결 완료
@@ -214,7 +197,6 @@ const GOOGLE_CLIENT_ID = 'YOUR_NEW_GOOGLE_CLIENT_ID_HERE';
 3. **저장 불가**: 브라우저 저장소 용량 확인 또는 쿠키 설정 점검
 
 ### 해결 방법
-- **OAuth 문제**: `GOOGLE_OAUTH_SETUP.md` 단계별 가이드 따르기
 - **배포 문제**: `DEPLOYMENT.md` GitHub Pages 배포 가이드 참조
 - **디버깅**: 콘솔 창에서 상세 로그 확인 (F12 → Console)
 - **데이터 문제**: '저장된 데이터 지우기'로 초기화 후 재시도
